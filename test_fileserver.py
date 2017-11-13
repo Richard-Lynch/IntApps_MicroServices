@@ -88,6 +88,5 @@ class fileserverTestCase(unittest.TestCase):
         # print (rv.data)
         assert b'"name": "Richie"' not in rv.data
 
-
 if __name__ == '__main__':
     unittest.main()
