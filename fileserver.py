@@ -14,6 +14,10 @@ pals = [
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
+@app.errorhandler(400)
+def bad_request(error):
+    return make_response(jsonify({'error': 'Bad request'}), 400)
+
 @app.route('/', methods=['GET'])
 def root():
     return jsonify({'test' : 'success!'})
@@ -32,7 +36,7 @@ def get_pal(name):
 @app.route('/pals', methods=['POST'])
 def create_pal():
     if not request.json or not 'name' in request.json:
-        print ("json:", request.json)
+        # print ("json:", request.json)
         abort(400)
     p = {
             'id' : pals[-1]['id'] + 1,
@@ -45,16 +49,13 @@ def create_pal():
 def update_pal(pal_id):
     pal_list = [ p for p in pals if p['id'] == pal_id ] 
     if len(pal_list) == 0:
-        print ("zero len")
+        # print ("zero len")
         abort(404)
     if not request.json:
-        print ("not json")
+        # print ("not json")
         abort(400)
     if 'name' in request.json and type(request.json['name']) is not str:
-        print ("json:", request.json)
-        print ("type:", type(request.json))
-        print ("type:", type(request.json['name']))
-        print ("no name")
+        # print ("no name")
         abort(400)
     pal_list[0]['name'] = request.json.get('name', pal_list[0]['name']) # deal with name being empty (for multiple values), default to old value
     return jsonify({'pal' : pal_list[0]})
@@ -66,7 +67,9 @@ def delete_pal(pal_id):
         abort(404)
     pals.remove(pal_list[0])
     return jsonify({'result' : True})
-    
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=8080)
 
