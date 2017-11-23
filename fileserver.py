@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 
-from flask import Flask, jsonify, request, make_response, abort
+from flask import Flask, jsonify, request, make_response, abort, url_for
 app = Flask(__name__)
 
 pals = [
@@ -13,10 +13,21 @@ pals = [
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
-
 @app.errorhandler(400)
 def bad_request(error):
     return make_response(jsonify({'error': 'Bad request'}), 400)
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': 'Unauthorized access'}), 403)
+
+def make_public_pal(p):
+    new_pal = {}
+    for field in p:
+        if field == 'id':
+            new_pal['uri'] = url_for('get_pal_id', p_id=p['id'], _external=True)
+        else:
+            new_pal[field] = p[field]
+    return new_pal
 
 @app.route('/', methods=['GET'])
 def root():
@@ -24,14 +35,20 @@ def root():
 
 @app.route('/pals', methods=['GET'])
 def get_pals():
-    return jsonify({'pals' : pals})
+    return jsonify({'pals' : [make_public_pal(p) for p in pals]})
 
 @app.route('/pals/<string:name>', methods=['GET'])
-def get_pal(name):
+def get_pal_name(name):
     pal_list = [ p for p in pals if p['name'] == name ] 
     if len(pal_list) == 0:
         abort(404)
-    return jsonify({'pal' : pal_list[0]})
+    return jsonify({'pal' : make_public_pal(pal_list[0])})
+@app.route('/pals/<int:p_id>', methods=['GET'])
+def get_pal_id(p_id):
+    pal_list = [ p for p in pals if p['id'] == p_id ] 
+    if len(pal_list) == 0:
+        abort(404)
+    return jsonify({'pal' : make_public_pal(pal_list[0])})
 
 @app.route('/pals', methods=['POST'])
 def create_pal():
