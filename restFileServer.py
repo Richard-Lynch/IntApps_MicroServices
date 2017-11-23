@@ -5,7 +5,7 @@ from flask_kerberos import requires_authentication
 from flask_restful import Api, Resource, abort, HTTPException
 from flask_restful import reqparse, fields, marshal
 import requests
-
+import my_errors
 # ----- Files DB -----
 files = [
         # {"name": "Richie", 'id' : 0, 'conent' : "sup fella!"},
@@ -14,55 +14,11 @@ files = [
         # {"name": "Ste", 'id' : 3, 'content' : "I'm really handsome"}
         ]
 
-# ----- Errors -----
-errors = {
-        'not_found' : {
-            'message' : "Not Found",
-            'status' : 404,
-            },
-        'bad_request' : {
-            'message' : 'Bad Request',
-            'status' : 400,
-            },
-        'unauthorized' : {
-            'message' : 'Unauthorized Acces',
-            'status' : 403,
-            },
-        }
-
-class not_found(HTTPException):
-    code = 400
-class bad_request(HTTPException):
-    code = 400
-class unauthorized(HTTPException):
-    code = 400
 
 # ----- Init -----
 app = Flask(__name__)
 api = Api(app, errors=errors)
 
-# ----- fields -----
-file_summary_fields = {
-    'name': fields.String,
-    'id': fields.Integer,
-    'uri': fields.Url('file', absolute=True),
-    'https_uri': fields.Url('file', absolute=True, scheme='https')
-}
-file_fields = {
-    'name': fields.String,
-    'id': fields.Integer,
-    'uri': fields.Url('file', absolute=True),
-    'https_uri': fields.Url('file', absolute=True, scheme='https'),
-    'content': fields.String
-}
-file_list_fields={
-        'files' : fields.Nested(file_fields)
-    }
-register_fields = {
-    'name': fields.String,
-    'machine_id' : fields.Integer(default=fileS.machine_id),
-    'uri': fields.Url('files', absolute=True),
-    }
 # ----- Files List -----
 class FilesListApi(Resource):
     def __init__(self):
@@ -73,7 +29,8 @@ class FilesListApi(Resource):
         self.reqparse.add_argument('content', type = str, location = 'json', default = "")
         super(FilesListApi, self).__init__()
     def get(self):
-        return { 'files' : [ marshal(f, file_summary_fields) for f in self.fileS.get_all_files() ] }
+        files = self.fileS.get_all_files()
+        return { 'files' : [ marshal(files[f], file_summary_fields) for f in files ] }
     def post(self):
         args = self.reqparse.parse_args()
         f = self.fileS.add_file(args)
@@ -110,20 +67,24 @@ class fileServer():
     def __init__(self):
         self.files = self.load_files()
         self.next_id = 1
-        dirServerAdd = "http://127.0.0.1:8081/files"
-        r = requests.post(dirServerAdd).json()
+        self.dirServerAdd = "http://127.0.0.1:8081/files"
+        r = requests.post(self.dirServerAdd).json()
         if 'id' in r:
             self.machine_id = r['id']
-            F = [ dict(marshal(f, register_fields)) for f in self.files ] 
+            self.register_initial_files()
+        print ("file server started")
+    def load_files(self):
+        return {}
+    def register_initial_files(self):
+        if len (self.files) > 0:
+            # F = [dict(marshal(self.files[f], register_fields)) for f in self.files] 
+            # F = [dict(marshal(self.files[f], register_fields)) for f in self.files] 
             print ("F", F)
             if len(F) > 0:
                 for f in F:
                     print ("f", dict(f))
-                    r = requests.put(dirServerAdd, json=dict(f))
+                    r = requests.put(self.dirServerAdd, json=dict(f))
                     print (r.json())
-        print ("file server started")
-    def load_files(self):
-        return {}
     def get_next(self):
         # lock
         current = self.next_id
@@ -139,7 +100,8 @@ class fileServer():
         for k, v in args.items():
             f[k] = v
         f['id'] = self.get_next()
-        files.append(f)
+        r = requests.put(self.dirServerAdd, json=dict(f))
+        self.files[f['name']] = f
         return f
     def update_file(self, args):
         f = self.fileS.get_file(id)
@@ -155,7 +117,7 @@ class fileServer():
         else:
             return f[0]
     def get_all_files(self):
-        return self.files[:]
+        return self.files
     def del_file(self, id):
         f = self.fileS.get_file(id)
         if f == None:
@@ -170,6 +132,8 @@ class fileServer():
 # ----- Main -----
 if __name__ == '__main__':
     fileS = fileServer()
-    from my_errors import *
+    import my_fields
+    my_fields.init_fields(fileS.machine_id)    
+    from my_fields import *
     app.run(host='0.0.0.0', debug=True, port=8080)
 
