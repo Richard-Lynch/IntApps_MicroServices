@@ -1,92 +1,80 @@
 #!/usr/local/bin/python3
-
-from flask import Flask, jsonify, request, make_response, abort, url_for
-app = Flask(__name__)
-
-pals = [
-        {"name": "Richie", 'id' : 0},
-        {"name": "Ali", 'id' : 1},
-        {"name": "Jenny", 'id' : 2},
-        {"name": "Ste", 'id' : 3}
-        ]
-
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
-@app.errorhandler(400)
-def bad_request(error):
-    return make_response(jsonify({'error': 'Bad request'}), 400)
-@auth.error_handler
-def unauthorized():
-    return make_response(jsonify({'error': 'Unauthorized access'}), 403)
-
-def make_public_pal(p):
-    new_pal = {}
-    for field in p:
-        if field == 'id':
-            new_pal['uri'] = url_for('get_pal_id', p_id=p['id'], _external=True)
+import requests
+import sys
+from flask import Flask, jsonify, request, make_response, url_for
+from flask_kerberos import requires_authentication
+from flask_restful import Api, Resource, abort, HTTPException
+from flask_restful import reqparse, fields, marshal
+from my_fields import *
+class fileServer():
+    def __init__(self):
+        self.files = self.load_files()
+        self.next_id = 1
+        self.dirServerAdd = "http://127.0.0.1:8081/files"
+        r = requests.post(self.dirServerAdd).json()
+        self.machine_id = None
+        if 'id' in r:
+            self.machine_id = r['id']
+            self.register_initial_files()
+            print ("file server started")
         else:
-            new_pal[field] = p[field]
-    return new_pal
-
-@app.route('/', methods=['GET'])
-def root():
-    return jsonify({'test' : 'success!'})
-
-@app.route('/pals', methods=['GET'])
-def get_pals():
-    return jsonify({'pals' : [make_public_pal(p) for p in pals]})
-
-@app.route('/pals/<string:name>', methods=['GET'])
-def get_pal_name(name):
-    pal_list = [ p for p in pals if p['name'] == name ] 
-    if len(pal_list) == 0:
-        abort(404)
-    return jsonify({'pal' : make_public_pal(pal_list[0])})
-@app.route('/pals/<int:p_id>', methods=['GET'])
-def get_pal_id(p_id):
-    pal_list = [ p for p in pals if p['id'] == p_id ] 
-    if len(pal_list) == 0:
-        abort(404)
-    return jsonify({'pal' : make_public_pal(pal_list[0])})
-
-@app.route('/pals', methods=['POST'])
-def create_pal():
-    if not request.json or not 'name' in request.json:
-        # print ("json:", request.json)
-        abort(400)
-    p = {
-            'id' : pals[-1]['id'] + 1,
-            'name' : request.json['name']
-            }
-    pals.append(p)
-    return jsonify({'pal' : p}), 201
-
-@app.route('/pals/<int:pal_id>', methods=['PUT'])
-def update_pal(pal_id):
-    pal_list = [ p for p in pals if p['id'] == pal_id ] 
-    if len(pal_list) == 0:
-        # print ("zero len")
-        abort(404)
-    if not request.json:
-        # print ("not json")
-        abort(400)
-    if 'name' in request.json and type(request.json['name']) is not str:
-        # print ("no name")
-        abort(400)
-    pal_list[0]['name'] = request.json.get('name', pal_list[0]['name']) # deal with name being empty (for multiple values), default to old value
-    return jsonify({'pal' : pal_list[0]})
-
-@app.route('/pals/<int:pal_id>', methods=['DELETE'])
-def delete_pal(pal_id):
-    pal_list = [ p for p in pals if p['id'] == pal_id ] 
-    if len(pal_list) == 0:
-        abort(404)
-    pals.remove(pal_list[0])
-    return jsonify({'result' : True})
-
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=8080)
-
+            print ("not given id")
+# util functions
+    def load_files(self):
+        return {}
+    def get_next(self):
+        # lock
+        current = self.next_id
+        self.next_id += 1
+        # release
+        return current
+# register
+    def register_initial_files(self):
+        if len (self.files) > 0:
+            for f in self.files:
+                r = self.register_file(f)
+                print (r)
+    def register_file(self, f):
+        return requests.put(self.dirServerAdd, json=dict(marshal(f, register_fields))).json
+    def un_register_file(self, id):
+        f = get_file(id)
+        return requests.delete(f['url']).json
+# file edits
+    def add_file(self, args):
+        f = {}
+        # do any checking here
+        if 'name' in args.keys():
+            if args.get('name') in self.files:
+                return None
+        for k, v in args.items():
+            f[k] = v
+        f['id'] = self.get_next()
+        f['machine_id'] = self.machine_id
+        r = self.register_file(f)
+        self.files[f['name']] = f
+        return f
+    def update_file(self, args, id):
+        f = self.get_file(id)
+        if f != None:
+            for k, v in args.items():
+                if v != None:
+                    f[k] = v
+        return f
+    def del_file(self, id):
+        f = self.get_file(id)
+        if f == None:
+            return False
+        self.un_register(id)
+        self.files.remove(file)
+        return True
+# return files
+    def get_file(self, id):
+        f = [ self.files[f] for f in self.files if self.files[f]['id'] == id ]
+        print ('f', f)
+        # f = list(filter(lambda F: self.files[F]['id'] == id, self.files))
+        if len(f) > 0:
+            return f[0]
+        else:
+            return None
+    def get_all_files(self):
+        return self.files
