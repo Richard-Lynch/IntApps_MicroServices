@@ -1,7 +1,12 @@
 #!/bin/bash
-command="127.0.0.1:8080/files"
-if [[ $# == 1 ]] ; then
-    command="$command/$1"
+command="127.0.0.1:"
+port="8080"
+endpoint="/files"
+if [[ $# > 0 ]] ; then
+    endpoint="$endpoint/$1"
 fi
-echo $command
-curl -i $command
+if [[ $# > 1 ]] ; then
+    port="$2"
+fi
+echo $command$port$endpoint
+curl -i $command$port$endpoint

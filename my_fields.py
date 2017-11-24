@@ -3,14 +3,12 @@ from flask_restful import fields
 # ----- fields -----
 file_summary_fields = {
     'name': fields.String,
-    'id': fields.Integer,
     'machine_id' : fields.Integer(default=-1),
     'uri': fields.Url('file', absolute=True),
     'https_uri': fields.Url('file', absolute=True, scheme='https')
 }
 file_fields = {
     'name': fields.String,
-    'id': fields.Integer,
     'machine_id' : fields.Integer(default=-1),
     'uri': fields.Url('file', absolute=True),
     'https_uri': fields.Url('file', absolute=True, scheme='https'),
@@ -22,5 +20,10 @@ file_list_fields={
 register_fields = {
     'name': fields.String,
     'machine_id' : fields.Integer(default=-1),
-    'uri': fields.Url('files', absolute=True),
+    'uri': fields.Url('file', absolute=True),
     }
+dir_file_fields = {
+        'name' : fields.String,
+        'machine_id' : fields.String,
+        'uri' : fields.String,
+        }

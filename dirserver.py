@@ -27,7 +27,9 @@ class dirServer():
         return f
     def get_file(self, args):
         f = [ self.files[f] for f in self.files if self.files[f]['name'] == name ]
+        print ("type", type(f))
         if len(f) > 0:
+            print ("type", type(f[0]))
             return f[0]
         else:
             return None
