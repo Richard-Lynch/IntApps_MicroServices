@@ -33,7 +33,7 @@ def make_classes(errors):
         globals()[key] = myClass
         classes.append(myClass)
     return classes
-make_classes(errors)
+# make_classes(errors)
 # class not_found(HTTPException):
 #     code = 400
 # class user_not_found(HTTPException):
