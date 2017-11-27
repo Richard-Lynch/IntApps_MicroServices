@@ -5,10 +5,15 @@ from flask import Flask, jsonify, request, make_response, url_for
 from flask_kerberos import requires_authentication
 from flask_restful import Api, Resource, abort, HTTPException
 from flask_restful import reqparse, fields, marshal
-from my_fields import *
+import my_errors
+my_errors.make_classes(my_errors.errors)
+import my_fields
+
 class fileServer():
     def __init__(self):
-        self.files = self.load_files()
+        self.file_names = {}
+        self.files = {}
+        self.load_files()
         self.next_id = 1
         self.dirServerAdd = "http://127.0.0.1:8081/files"
         r = requests.post(self.dirServerAdd).json()
@@ -19,62 +24,94 @@ class fileServer():
             print ("file server started")
         else:
             print ("not given id")
+
+    def __open__(self):
+        print("using fileServer as open")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        print("exiting")
+        self.un_register_all_files()
+
 # util functions
     def load_files(self):
-        return {}
+        self.files = {}
+        self.file_names = {}
+        return True
+
     def get_next(self):
         # lock
         current = self.next_id
         self.next_id += 1
         # release
         return current
+
 # register
     def register_initial_files(self):
-        if len (self.files) > 0:
-            for f in self.files:
-                r = self.register_file(f)
-                print (r)
+        for f in self.files:
+            r = self.register_file(f)
+            # should check here if r is correct/valid
+            print (r)
+
     def register_file(self, f):
-        return requests.put(self.dirServerAdd, json=dict(marshal(f, register_fields))).json
+        # regsiter the file with the dir server
+        return requests.put(self.dirServerAdd, json=dict(marshal(f, my_fields.register_fields))).json()
+
     def un_register_file(self, id):
-        f = get_file(id)
-        return requests.delete(f['url']).json
+        # unregister with the dir server 
+        f = self.get_file(id)
+        # return the response from the request
+        return requests.delete(f['reg_uri']).json()
+
+    def un_register_all_files(self):
+        print ("in all")
+        for f in self.files:
+            print ("id", self.files[f]['id'])
+            print ("result", self.un_register_file(self.files[f]['id']))
 # file edits
-    def add_file(self, args):
+    def add_file(self, **kwargs):
+        # create blank file
         f = {}
-        # do any checking here
-        if 'name' in args.keys():
-            if args.get('name') in self.files:
-                return None
-        for k, v in args.items():
+        # for every keyword arg (filtered by api)
+        for k, v in kwargs.items():
+            # add an entry to the file
             f[k] = v
-        f['id'] = self.get_next()
+        # if the filename already exist
+        if f['name'] in self.file_names:
+            raise my_errors.file_exists
+        # set file server values
+        id = self.get_next()
+        f['id'] = id
         f['machine_id'] = self.machine_id
-        r = self.register_file(f)
-        self.files[f['name']] = f
+        f['reg_uri'] = self.register_file(f)['file']['uri']
+        # map via id
+        self.files[id]= f
+        # map via name
+        self.file_names[f['name']] = f
         return f
+
     def update_file(self, args, id):
+        # update a file on the fileserver
         f = self.get_file(id)
-        if f != None:
-            for k, v in args.items():
-                if v != None:
-                    f[k] = v
+        for k, v in args.items():
+            if v != None:
+                f[k] = v
         return f
+
     def del_file(self, id):
+        # delete a file from the server
         f = self.get_file(id)
-        if f == None:
-            return False
         self.un_register(id)
-        self.files.remove(file)
+        del self.files[id]
+        del self.files[f['name']]
         return True
+
 # return files
     def get_file(self, id):
-        f = [ self.files[f] for f in self.files if self.files[f]['id'] == id ]
-        print ('f', f)
-        # f = list(filter(lambda F: self.files[F]['id'] == id, self.files))
-        if len(f) > 0:
-            return f[0]
-        else:
-            return None
+        try:
+            return self.files[id][0]
+        except KeyError:
+            raise my_errors.not_found
+
     def get_all_files(self):
-        return self.files
+        # return a list of values
+        return [ v for v in self.files.values() ]
