@@ -15,15 +15,21 @@ file_fields = {
     'content': fields.String
 }
 file_list_fields={
-        'files' : fields.Nested(file_fields)
+    'files' : fields.Nested(file_fields)
     }
 register_fields = {
     'name': fields.String,
     'machine_id' : fields.Integer(default=-1),
     'uri': fields.Url('file', absolute=True),
     }
+registered_fields = {
+    'name': fields.String,
+    'machine_id' : fields.Integer(default=-1),
+    'uri': fields.String,
+    'reg_uri': fields.Url('file', absolute=True)
+    }
 dir_file_fields = {
-        'name' : fields.String,
-        'machine_id' : fields.String,
-        'uri' : fields.String,
-        }
+    'name' : fields.String,
+    'machine_id' : fields.String,
+    'uri' : fields.String,
+    }

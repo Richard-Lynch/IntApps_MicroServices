@@ -66,22 +66,22 @@ class FileApi(Resource):
         self.reqparse.add_argument('content', type = str, location = 'json')
         super(FileApi, self).__init__()
 
-    def get(self, id):
+    def get(self, Id):
         print ("getting file")
-        f = self.fileS.get_file(id)
+        f = self.fileS.get_file(Id)
         return { 'file': marshal(f, my_fields.file_fields) }
 
-    def put(self, id):
+    def put(self, Id):
         print ("editing file")
         args = self.reqparse.parse_args()
-        f = self.fileS.update_file(args, id)
+        f = self.fileS.update_file(args, Id)
         return {"file" : marshal(f, my_fields.file_summary_fields)}
 
-    def delete (self, id):
+    def delete (self, Id):
         print ("deleting file")
-        return { 'deleted' : self.filesS.del_file(id) }
+        return { 'deleted' : self.filesS.del_file(Id) }
 
-api.add_resource(FileApi, '/files/<int:id>', endpoint = 'file')
+api.add_resource(FileApi, '/files/<int:Id>', endpoint = 'file')
 
 # ----- Main -----
 if __name__ == '__main__':
@@ -92,7 +92,8 @@ if __name__ == '__main__':
         print("taking args")
         port = int(sys.argv[1])
     fileS = fileServer()
-    if fileS.machine_id == None:
-        sys.exit
-    app.run(host='0.0.0.0', debug=True, port=port)
+    with fileServer() as fileS:
+        if fileS.machine_Id == None:
+            sys.exit
+        app.run(host='0.0.0.0', debug=True, port=port)
 

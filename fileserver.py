@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request, make_response, url_for
 from flask_kerberos import requires_authentication
 from flask_restful import Api, Resource, abort, HTTPException
 from flask_restful import reqparse, fields, marshal
+from collections import defaultdict
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
@@ -14,16 +15,12 @@ class fileServer():
         self.file_names = {}
         self.files = {}
         self.load_files()
-        self.next_id = 1
-        self.dirServerAdd = "http://127.0.0.1:8081/files"
+        self.next_id = 0
+        self.dirServerAdd = "http://127.0.0.1:8081/dirs"
         r = requests.post(self.dirServerAdd).json()
-        self.machine_id = None
-        if 'id' in r:
-            self.machine_id = r['id']
-            self.register_initial_files()
-            print ("file server started")
-        else:
-            print ("not given id")
+        self.machine_id = r.get('id', -1)
+        self.register_initial_files()
+        print ("file server started")
 
     def __open__(self):
         print("using fileServer as open")
@@ -34,11 +31,9 @@ class fileServer():
 
 # util functions
     def load_files(self):
-        self.files = {}
-        self.file_names = {}
         return True
 
-    def get_next(self):
+    def get_next_id(self):
         # lock
         current = self.next_id
         self.next_id += 1
@@ -54,7 +49,9 @@ class fileServer():
 
     def register_file(self, f):
         # regsiter the file with the dir server
-        return requests.put(self.dirServerAdd, json=dict(marshal(f, my_fields.register_fields))).json()
+        return requests.put(self.dirServerAdd + '/regsiter', \
+                json=dict( marshal( f, my_fields.register_fields ) ) \
+                ).json()
 
     def un_register_file(self, id):
         # unregister with the dir server 
@@ -64,51 +61,51 @@ class fileServer():
 
     def un_register_all_files(self):
         print ("in all")
+        return requests.delete(self.dirServerAdd + '/regsiter', \
+                json={'machine_id' : self.machine_id}).json()
         for f in self.files:
-            print ("id", self.files[f]['id'])
-            print ("result", self.un_register_file(self.files[f]['id']))
+            self.un_register_file(self.files[f]['Id'])
+            # print ("id", self.files[f]['id'])
+            # print ("result", self.un_register_file(self.files[f]['id']))
+
 # file edits
     def add_file(self, **kwargs):
-        # create blank file
-        f = {}
-        # for every keyword arg (filtered by api)
-        for k, v in kwargs.items():
-            # add an entry to the file
-            f[k] = v
+        # add every keyword arg (filtered by api)
+        f = { k: v for k, v in kwargs.items()}
         # if the filename already exist
         if f['name'] in self.file_names:
             raise my_errors.file_exists
         # set file server values
-        id = self.get_next()
-        f['id'] = id
+        Id = self.get_next_id()
+        f['Id'] = Id
         f['machine_id'] = self.machine_id
-        f['reg_uri'] = self.register_file(f)['file']['uri']
+        f['reg_uri'] = self.register_file(f)['file']['reg_uri']
         # map via id
-        self.files[id]= f
+        self.files[Id]= f
         # map via name
         self.file_names[f['name']] = f
         return f
 
-    def update_file(self, args, id):
+    def update_file(self, args, Id):
         # update a file on the fileserver
-        f = self.get_file(id)
+        f = self.get_file(Id)
         for k, v in args.items():
             if v != None:
                 f[k] = v
         return f
 
-    def del_file(self, id):
+    def del_file(self, Id):
         # delete a file from the server
-        f = self.get_file(id)
-        self.un_register(id)
-        del self.files[id]
+        f = self.get_file(Id)
+        self.un_register(Id)
+        del self.files[Id]
         del self.files[f['name']]
         return True
 
 # return files
-    def get_file(self, id):
+    def get_file(self, Id):
         try:
-            return self.files[id][0]
+            return self.files[Id]
         except KeyError:
             raise my_errors.not_found
 

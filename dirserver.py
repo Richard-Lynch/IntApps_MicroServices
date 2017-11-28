@@ -8,8 +8,9 @@ class dirServer():
         self.next_machine = 0
         self.next_file_id = 0
         self.files = defaultdict(dict)
-        self.files_id = defaultdict(dict)
+        self.files_Id = {}
         self.machines = defaultdict(dict)
+
     # util functions
     def get_next_machince(self):
         # lock
@@ -23,42 +24,48 @@ class dirServer():
         self.next_file_id += 1
         # release
         return current
+
     # registration
     def register_file(self, **kwargs):
-        # create a blank file reg
-        f = {}
-        # for every keyword arg (filtered by api)
-        for k, v in kwargs.items():
-            # add an entry to the file reg
-            f[k] = v
+        # reg file, add every keyword arg (filtered by api)
+        f = {k: v for k, v in kwargs.items()}
         # add dir server values
-        id = self.get_next_file_id()
-        f['id'] = id
+        Id = self.get_next_file_id()
+        f['Id'] = Id
         # map via id
-        self.machines[f['id']] = f
+        self.files_Id[f['Id']] = f
         # map via name
-        if f['name'] not in self.files:
-            self.files[f['name']] = {f['id'] : f}
-        else:
-            self.files[f['name']][f['id']] = f
+        self.files[f['name']][f['Id']] = f
         # map via machine id
-        if f['machine_id'] not in self.machines:
-            self.machines[f['machine_id']] = {f['id'] : f}
-        else:
-            self.machines[f['machine_id']][f['id']] = f
+        self.machines[f['machine_id']][f['Id']] = f
         return f
 
-    def unreg_file(self, id):
-        file = self.get_file_by_id(id)
-        del self.files_id[file['id']]
-        del self.files[file['name']][id]
-        del self.machines[file['machine_id']][id]
+    def unreg_file(self, Id):
+        file = self.get_file_by_Id(Id)
+        del self.files_Id[Id]
+        del self.files[file['name']][Id]
+        del self.machines[file['machine_id']][Id]
+        return file
+
+    def unreg_machine(self, machine_id):
+        # get all files from machine_id
+        try:
+            machine = self.machines[machine_id]
+        except KeyError:
+            raise my_errors.not_found
+        Ids = [ Id for Id in machine.keys() ]
+        for Id in Ids:
+            self.unreg_file(Id)
+        del self.machines[machine_id]
+        return machine_id
+
+
 
     # retreive files
-    def get_file_by_id(self, id):
-        # get via id
+    def get_file_by_Id(self, Id):
+        # get via Id
         try:
-            return self.files_id[id]
+            return self.files_Id[Id]
         except KeyError:
             raise my_errors.not_found
     
