@@ -25,7 +25,6 @@ register_fields = {
 registered_fields = {
     'name': fields.String,
     'machine_id' : fields.Integer(default=-1),
-    'uri': fields.String,
     'reg_uri': fields.Url('file', absolute=True)
     }
 dir_file_fields = {

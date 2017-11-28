@@ -5,13 +5,16 @@ from flask_kerberos import requires_authentication
 from flask_restful import Api, Resource, abort, HTTPException
 from flask_restful import reqparse, fields, marshal
 from lockserver import lockServer
-from my_errors import *
-from my_fields import *
+import my_errors
+my_errors.make_classes(my_errors.errors)
+import my_fields
 # ----- Files DB -----
 
 # ----- Init -----
 app = Flask(__name__)
-api = Api(app, errors=errors)
+api = Api(app, errors=my_errors.errors)
+
+        
 
 # ----- Files List -----
 class FilesListApi(Resource):
@@ -21,28 +24,23 @@ class FilesListApi(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('uri', type = str, location = 'json', help = "No filename provided")
         super(FilesListApi, self).__init__()
+
     def get(self):
         print ("checking lock")
         args = self.reqparse.parse_args()
-        if 'uri' in args.keys():
-            return { 'locked' : self.dirserver.get_lock_status(args.get(uri)) }
-        else:
-            raise not_found
+        return { 'locked' : self.lockServer.get_lock_status(**args) }
+
     def post(self):
         print ("aquireing new lock")
         args = self.reqparse.parse_args()
-        if 'uri' in args.keys():
-            return { 'lock' : self.dirserver.lock_file(args.get(uri)) }
-        else:
-            raise bad_request
+        return { 'locked' : self.lockServer.lock_file(**args) }
+
     def delete(self):
-        print ("aquireing new lock")
+        print ("removing lock")
         args = self.reqparse.parse_args()
-        if 'uri' in args.keys():
-            return { 'unlocked' : self.lockServer.unlock_file(uri) }
-        else:
-            raise bad_request
-api.add_resource(FilesListApi, '/files', endpoint = 'files')
+        return { 'unlocked' : self.lockServer.unlock_file(**args) }
+
+api.add_resource(FilesListApi, '/lock', endpoint = 'lock')
 
 # ----- Main -----
 if __name__ == '__main__':

@@ -52,14 +52,16 @@ class dirServer():
         try:
             machine = self.machines[machine_id]
         except KeyError:
+            print ("machine not in machines")
             raise my_errors.not_found
+        # list of file ids owned registered to this machine
         Ids = [ Id for Id in machine.keys() ]
+        # unreg each file by id
         for Id in Ids:
             self.unreg_file(Id)
+        # unregister the machine itself
         del self.machines[machine_id]
         return machine_id
-
-
 
     # retreive files
     def get_file_by_Id(self, Id):
@@ -67,6 +69,7 @@ class dirServer():
         try:
             return self.files_Id[Id]
         except KeyError:
+            print ("file id not found")
             raise my_errors.not_found
     
     def search_filename(self, name):
@@ -74,6 +77,7 @@ class dirServer():
         try:
             return [ v for v in self.files[name].values() ]
         except KeyError:
+            print ("file name not found")
             raise my_errors.not_found
 
     def list_by_machine(self, machine_id):

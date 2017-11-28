@@ -39,6 +39,7 @@ class FilesListApi(Resource):
         args = self.reqparse.parse_args()
         # check that all required args are present
         if all (req in args for req in reqs):
+            print ("reqs met")
             # strip any unnessasary keyvalue pairs
             kwargs = { req: args[req] for req in reqs }
             # add the file to the file server
@@ -52,7 +53,7 @@ class FilesListApi(Resource):
     def delete(self):
         # called to delete the fileserver, testing only
         print ("unregistering all")
-        self.fileS.un_register_all_files()
+        self.fileS.del_all_files()
 
 api.add_resource(FilesListApi, '/files', endpoint = 'files')
 
@@ -91,9 +92,10 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         print("taking args")
         port = int(sys.argv[1])
-    fileS = fileServer()
+    # fileS = fileServer()
     with fileServer() as fileS:
-        if fileS.machine_Id == None:
+        if fileS.machine_id == None:
+            print ("no machine id")
             sys.exit
         app.run(host='0.0.0.0', debug=True, port=port)
 

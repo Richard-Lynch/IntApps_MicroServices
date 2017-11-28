@@ -71,6 +71,7 @@ class RegApi(Resource):
         args = self.reqparse.parse_args()
         # check that all required args are present
         if all (req in args for req in reqs):
+            print ("reqs met")
             # strip any unnessasary keyvalue pairs
             kwargs = { req: args[req] for req in reqs }
             # add the file to the file server
@@ -79,6 +80,7 @@ class RegApi(Resource):
             return { "file" : marshal(f, my_fields.registered_fields)}
         else:
             # if not all reqs are met
+            print ('not met')
             raise my_errors.bad_request
 
     def delete(self):

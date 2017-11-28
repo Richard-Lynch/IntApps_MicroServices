@@ -17,13 +17,18 @@ class fileServer():
         self.load_files()
         self.next_id = 0
         self.dirServerAdd = "http://127.0.0.1:8081/dirs"
-        r = requests.post(self.dirServerAdd).json()
-        self.machine_id = r.get('id', -1)
+        r = requests.post(self.dirServerAdd+'/register').json()
+        self.machine_id = r.get('Id', -1)
         self.register_initial_files()
         print ("file server started")
 
-    def __open__(self):
+    def __enter__(self):
         print("using fileServer as open")
+        return self
+
+    def __del__(self):
+        print("deleting")
+        self.un_register_all_files()
 
     def __exit__(self, exc_type, exc_value, traceback):
         print("exiting")
@@ -40,6 +45,12 @@ class fileServer():
         # release
         return current
 
+    def del_all_files(self):
+        # for testing only, would not be live
+        self.file_names = {}
+        self.files = {}
+        self.un_register_all_files()
+
 # register
     def register_initial_files(self):
         for f in self.files:
@@ -49,9 +60,10 @@ class fileServer():
 
     def register_file(self, f):
         # regsiter the file with the dir server
-        return requests.put(self.dirServerAdd + '/regsiter', \
-                json=dict( marshal( f, my_fields.register_fields ) ) \
-                ).json()
+        r = requests.put(self.dirServerAdd + '/register', \
+                json=dict( marshal( f, my_fields.register_fields ) )).json()
+        print (r)
+        return r
 
     def un_register_file(self, id):
         # unregister with the dir server 
@@ -60,16 +72,15 @@ class fileServer():
         return requests.delete(f['reg_uri']).json()
 
     def un_register_all_files(self):
+        # for when a machine is going down
         print ("in all")
-        return requests.delete(self.dirServerAdd + '/regsiter', \
+        r = requests.delete(self.dirServerAdd + '/register', \
                 json={'machine_id' : self.machine_id}).json()
-        for f in self.files:
-            self.un_register_file(self.files[f]['Id'])
-            # print ("id", self.files[f]['id'])
-            # print ("result", self.un_register_file(self.files[f]['id']))
+        print (r)
 
 # file edits
     def add_file(self, **kwargs):
+        print ('in add_file')
         # add every keyword arg (filtered by api)
         f = { k: v for k, v in kwargs.items()}
         # if the filename already exist
