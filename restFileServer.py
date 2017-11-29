@@ -55,22 +55,22 @@ class FileApi(Resource):
         self.reqparse.add_argument('content', type = str, location = 'json')
         super(FileApi, self).__init__()
 
-    def get(self, Id):
+    def get(self, _id):
         print ("getting file")
-        f = self.fileS.get_file(Id)
+        f = self.fileS.get_file(_id)
         return { 'file': marshal(f, my_fields.file_fields) }
 
-    def put(self, Id):
+    def put(self, _id):
         print ("editing file")
         args = self.reqparse.parse_args()
-        f = self.fileS.update_file(args, Id)
+        f = self.fileS.update_file(args, _id)
         return {"file" : marshal(f, my_fields.file_summary_fields)}
 
-    def delete (self, Id):
+    def delete (self, _id):
         print ("deleting file")
-        return { 'deleted' : self.filesS.del_file(Id) }
+        return { 'deleted' : self.filesS.del_file(_id) }
 
-api.add_resource(FileApi, '/files/<string:Id>', endpoint = 'file')
+api.add_resource(FileApi, '/files/<string:_id>', endpoint = 'file')
 
 # ----- Main -----
 if __name__ == '__main__':

@@ -17,4 +17,4 @@ jq -n --arg v1 "$V2" "$json_template" |
     curl -i -X PUT \
     -H "Content-Type: application/json" \
     -d@- \
-    "$address"/files/$V1
+    "$address/files/$V1"

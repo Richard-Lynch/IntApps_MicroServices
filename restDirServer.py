@@ -36,15 +36,15 @@ class FileApi(Resource):
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('Id', type=str, location='json')
+        self.reqparse.add_argument('_id', type=str, location='json')
         super(FileApi, self).__init__()
 
-    def delete (self, Id):
+    def delete (self, _id):
         print ('unregistering file')
-        f = self.dirServer.unreg_file(Id)
+        f = self.dirServer.unreg_file(_id)
         return { 'deleted': marshal(f, my_fields.dir_file_fields) }
 
-api.add_resource(FileApi, '/dirs/<int:Id>', endpoint='file')
+api.add_resource(FileApi, '/dirs/<int:_id>', endpoint='file')
 
 # ---- Register ----
 class RegApi(Resource):
@@ -53,7 +53,7 @@ class RegApi(Resource):
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('Id', type=str, location='json')
+        self.reqparse.add_argument('_id', type=str, location='json')
         self.reqparse.add_argument('name', type=str, location='json')
         self.reqparse.add_argument('machine_id', type=str, location='json')
         self.reqparse.add_argument('uri', type=str, location='json')
@@ -61,7 +61,7 @@ class RegApi(Resource):
         
     def post(self):
         print ("registering new machine")
-        return { "Id" : self.dirServer.get_next_machince() }
+        return { "_id" : self.dirServer.get_next_machince() }
 
     def put(self):
         print ("registering new file")

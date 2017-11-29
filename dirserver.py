@@ -34,20 +34,20 @@ class dirServer():
         f = {k: v for k, v in kwargs.items()}
         # add dir server values
         Id = self.get_next_file_id()
-        f['Id'] = Id
+        f['_id'] = Id
         # map via id
-        self.files_Id[f['Id']] = f
+        self.files_Id[f['_id']] = f
         # map via name
-        self.files[f['name']][f['Id']] = f
+        self.files[f['name']][f['_id']] = f
         # map via machine id
-        self.machines[f['machine_id']][f['Id']] = f
+        self.machines[f['machine_id']][f['_id']] = f
         return f
 
-    def unreg_file(self, Id):
-        file = self.get_file_by_Id(Id)
-        del self.files_Id[Id]
-        del self.files[file['name']][Id]
-        del self.machines[file['machine_id']][Id]
+    def unreg_file(self, _id):
+        file = self.get_file_by_Id(_id)
+        del self.files_Id[_id]
+        del self.files[file['name']][_id]
+        del self.machines[file['machine_id']][_id]
         return file
 
     @check.reqs(['machine_id'])
@@ -68,10 +68,10 @@ class dirServer():
         return machine_id
 
     # retreive files
-    def get_file_by_Id(self, Id):
-        # get via Id
+    def get_file_by_Id(self, _id):
+        # get via _id
         try:
-            return self.files_Id[Id]
+            return self.files_Id[_id]
         except KeyError:
             print ("file id not found")
             raise my_errors.not_found

@@ -34,7 +34,7 @@ class fileServer():
         self.next_id = 0
         self.dirServerAdd = "http://127.0.0.1:8081/dirs"
         r = requests.post(self.dirServerAdd+'/register').json()
-        self.machine_id = r.get('Id', -1)
+        self.machine_id = r.get('_id', -1)
         self.register_initial_files()
         print ("file server started")
 
@@ -70,16 +70,25 @@ class fileServer():
             # should check here if r is correct/valid
             print (r)
 
-    def register_file(self, f):
+    def register_file(self, Id):
         # regsiter the file with the dir server
-        r = requests.put(self.dirServerAdd + '/register', \
-                json=dict( marshal( f, my_fields.register_fields ) )).json()
-        print (r)
-        return r
+        f = self.db_files.find_one({'_id' : Id})
+        if f:
+            r = requests.put(self.dirServerAdd + '/register', \
+                    json=dict( marshal( f, my_fields.register_fields ) )).json()
+            print ('r',r)
+            try:
+                reg_uri = r['file']['reg_uri']
+                self.db_files.update_one({'_id':ObjectId(Id)}, \
+                        {'$set':{'reg_uri':reg_uri}})
+            except Exception:
+                raise my_errors.bad_request
+        else:
+            raise my_errors.bad_request
 
-    def un_register_file(self, id):
+    def un_register_file(self, Id):
         # unregister with the dir server 
-        f = self.get_file(id)
+        f = self.get_file(Id)
         # return the response from the request
         return requests.delete(f['reg_uri']).json()
 
@@ -93,64 +102,33 @@ class fileServer():
 # file edits
     @check.reqs(['name', 'content'])
     def add_file(self, **kwargs):
-        print ('in add_file')
-        found_files = self.db_files.find()
-        for f in found_files:
-            pprint(f)
         # add every keyword arg (filtered by api)
         f = { k: v for k, v in kwargs.items()}
-        # if the filename already exist
-        if f['name'] in self.file_names:
-            print ('name in dict')
-            if mongo_stuff.exists(self.db_files, f) :
-                print ('name in db')
-            else:
-                print ('name not in db')
-            raise my_errors.file_exists
-        # set file server values
-        # Id = self.get_next_id()
-        # f['Id'] = Id
-        Id = mongo_stuff.insert(self.db_files, f)
-        f['Id'] = str( Id )
         f['machine_id'] = self.machine_id
-        f['reg_uri'] = self.register_file(f)['file']['reg_uri']
-        # add to db
-        # del f['Id']
-        result = self.db_files.update_one({'_id': Id}, {'$set': f})
-        print ('updated:', result.modified_count)
-        print('file:')
-        pprint(self.db_files.find_one({'_id': Id}))
-        # mongo_stuff.insert(self.db_files, f)
-        # f['Id'] = str ( Id )
-        # map via id
-        self.files[str(Id)]= f
-        # map via name
-        self.file_names[f['name']] = f
-        return f
+        Id = mongo_stuff.insert(self.db_files, f)
+        self.register_file(Id)
+        return self.get_file(Id)
 
     def update_file(self, args, Id):
+        # filter the args, if none dont set
+        kwargs = {k : v for k, v in args.items() if v}
         # update a file on the fileserver
-        f = self.get_file(Id)
-        for k, v in args.items():
-            if v != None:
-                f[k] = v
-        return f
+        self.db_files.update_one({'_id' : ObjectId(Id)}, {'$set': kwargs })
+        return self.get_file(Id)
 
     def del_file(self, Id):
         # delete a file from the server
-        f = self.get_file(Id)
         self.un_register(Id)
-        del self.files[Id]
-        del self.files[f['name']]
-        return True
+        return bool(self.db_files.delete_one({'_id' : ObjectId(Id)}).deleted_count)
 
 # return files
     def get_file(self, Id):
-        try:
-            return self.files[Id]
-        except KeyError:
+        f = self.db_files.find_one({'_id' : ObjectId(Id)})
+        if f:
+            return f
+        else:
             raise my_errors.not_found
 
     def get_all_files(self):
         # return a list of values
-        return [ v for v in self.files.values() ]
+        return [ f for f in self.db_files.find() ]
