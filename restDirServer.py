@@ -49,7 +49,7 @@ api.add_resource(FileApi, '/dirs/<int:Id>', endpoint='file')
 # ---- Register ----
 class RegApi(Resource):
     def __init__(self):
-        print("in reg")
+        print("init")
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
@@ -65,38 +65,18 @@ class RegApi(Resource):
 
     def put(self):
         print ("registering new file")
-        # required args
-        reqs = ['name', 'machine_id', 'uri']
-        # read args
         args = self.reqparse.parse_args()
-        # check that all required args are present
-        if all (req in args for req in reqs):
-            print ("reqs met")
-            # strip any unnessasary keyvalue pairs
-            kwargs = { req: args[req] for req in reqs }
-            # add the file to the file server
-            f = self.dirServer.register_file(**kwargs)
-            # return the file summary
-            return { "file" : marshal(f, my_fields.registered_fields)}
-        else:
-            # if not all reqs are met
-            print ('not met')
-            raise my_errors.bad_request
+        # add the file to the dir server
+        # return the file reg summary
+        return { "file" : marshal(self.dirServer.register_file(**args), \
+                my_fields.registered_fields)}
 
     def delete(self):
-        reqs = ['machine_id']
+        print('unregistering machine')
         args = self.reqparse.parse_args()
-        # check that all required args are present
-        if all (req in args for req in reqs):
-            # strip any unnessasary keyvalue pairs
-            kwargs = { req: args[req] for req in reqs }
-            # add the file to the file server
-            m_id = self.dirServer.unreg_machine(**kwargs)
-            # return the file summary
-            return { "un_reged" : m_id}
-        else:
-            # if not all reqs are met
-            raise my_errors.bad_request
+        # unregister the machine
+        # return the machine_id
+        return { "un_reged" : self.dirServer.unreg_machine(**args) }
 
 api.add_resource(RegApi, '/dirs/register', endpoint='register')
 

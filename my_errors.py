@@ -10,6 +10,10 @@ errors = {
             'message' : 'ahh couldnt find the user',
             'status' : 404,
             },
+        'user_exists' : { 
+            'message' : 'User already exists',
+            'status' : 400,
+            },
         'file_exists' : { 
             'message' : 'File already exists',
             'status' : 400,

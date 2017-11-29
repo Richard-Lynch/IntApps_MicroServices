@@ -9,9 +9,25 @@ from collections import defaultdict
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
+import check
+# --- mongo ----
+from pymongo import MongoClient
+from pprint import pprint 
+from bson.objectid import ObjectId
+import mongo_stuff
 
 class fileServer():
     def __init__(self):
+        # mongo
+        client = MongoClient()
+        self.db = client.test_database
+        print(self.db)
+        self.collection = self.db.test_collection
+        print (self.collection)
+        self.db_files = self.db.files
+        self.db_files.drop()
+        print (self.db_files)
+        # main
         self.file_names = {}
         self.files = {}
         self.load_files()
@@ -25,10 +41,6 @@ class fileServer():
     def __enter__(self):
         print("using fileServer as open")
         return self
-
-    def __del__(self):
-        print("deleting")
-        self.un_register_all_files()
 
     def __exit__(self, exc_type, exc_value, traceback):
         print("exiting")
@@ -79,20 +91,39 @@ class fileServer():
         print (r)
 
 # file edits
+    @check.reqs(['name', 'content'])
     def add_file(self, **kwargs):
         print ('in add_file')
+        found_files = self.db_files.find()
+        for f in found_files:
+            pprint(f)
         # add every keyword arg (filtered by api)
         f = { k: v for k, v in kwargs.items()}
         # if the filename already exist
         if f['name'] in self.file_names:
+            print ('name in dict')
+            if mongo_stuff.exists(self.db_files, f) :
+                print ('name in db')
+            else:
+                print ('name not in db')
             raise my_errors.file_exists
         # set file server values
-        Id = self.get_next_id()
-        f['Id'] = Id
+        # Id = self.get_next_id()
+        # f['Id'] = Id
+        Id = mongo_stuff.insert(self.db_files, f)
+        f['Id'] = str( Id )
         f['machine_id'] = self.machine_id
         f['reg_uri'] = self.register_file(f)['file']['reg_uri']
+        # add to db
+        # del f['Id']
+        result = self.db_files.update_one({'_id': Id}, {'$set': f})
+        print ('updated:', result.modified_count)
+        print('file:')
+        pprint(self.db_files.find_one({'_id': Id}))
+        # mongo_stuff.insert(self.db_files, f)
+        # f['Id'] = str ( Id )
         # map via id
-        self.files[Id]= f
+        self.files[str(Id)]= f
         # map via name
         self.file_names[f['name']] = f
         return f

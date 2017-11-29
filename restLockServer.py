@@ -8,22 +8,19 @@ from lockserver import lockServer
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
-# ----- Files DB -----
 
 # ----- Init -----
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
 
-        
-
-# ----- Files List -----
-class FilesListApi(Resource):
+# ----- Lock -----
+class LockApi(Resource):
     def __init__(self):
         global lServer
         self.lockServer = lServer
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('uri', type = str, location = 'json', help = "No filename provided")
-        super(FilesListApi, self).__init__()
+        super(LockApi, self).__init__()
 
     def get(self):
         print ("checking lock")
@@ -40,7 +37,7 @@ class FilesListApi(Resource):
         args = self.reqparse.parse_args()
         return { 'unlocked' : self.lockServer.unlock_file(**args) }
 
-api.add_resource(FilesListApi, '/lock', endpoint = 'lock')
+api.add_resource(LockApi, '/lock', endpoint = 'lock')
 
 # ----- Main -----
 if __name__ == '__main__':

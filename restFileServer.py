@@ -27,28 +27,16 @@ class FilesListApi(Resource):
 
     def get(self):
         print ("getting all files")
-        # reqs = [] 
         files = self.fileS.get_all_files()
         return { 'files' : [ marshal(f, my_fields.file_summary_fields) for f in files ] }
 
     def post(self):
         print ("adding file")
-        # required args
-        reqs = ['name', 'content']
-        # read args
         args = self.reqparse.parse_args()
-        # check that all required args are present
-        if all (req in args for req in reqs):
-            print ("reqs met")
-            # strip any unnessasary keyvalue pairs
-            kwargs = { req: args[req] for req in reqs }
-            # add the file to the file server
-            f = self.fileS.add_file(**kwargs)
-            # return the file summary
-            return { "file" : marshal(f, my_fields.file_fields)}
-        else:
-            # if not all reqs are met
-            raise my_errors.bad_request
+        # add the file to the file server
+        # return the file summary
+        return { "file" : marshal(self.fileS.add_file(**args), \
+                my_fields.file_fields)}
 
     def delete(self):
         # called to delete the fileserver, testing only
@@ -82,7 +70,7 @@ class FileApi(Resource):
         print ("deleting file")
         return { 'deleted' : self.filesS.del_file(Id) }
 
-api.add_resource(FileApi, '/files/<int:Id>', endpoint = 'file')
+api.add_resource(FileApi, '/files/<string:Id>', endpoint = 'file')
 
 # ----- Main -----
 if __name__ == '__main__':
@@ -98,4 +86,5 @@ if __name__ == '__main__':
             print ("no machine id")
             sys.exit
         app.run(host='0.0.0.0', debug=True, port=port)
+        print ('just chilling')
 

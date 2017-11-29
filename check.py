@@ -8,7 +8,6 @@ def reqs(reqs):
         def wrapped_f(self, **args):
             # ensure the requirements are met
             if all (req in args for req in reqs):
-                print ('reqs met')
                 # filter un-required keywords
                 kwargs = { req: args[req] for req in reqs }
                 # call func

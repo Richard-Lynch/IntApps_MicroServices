@@ -3,6 +3,8 @@ import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 from collections import defaultdict
+import check
+
 class dirServer():
     def __init__(self):
         self.next_machine = 0
@@ -26,6 +28,7 @@ class dirServer():
         return current
 
     # registration
+    @check.reqs(['name', 'machine_id', 'uri'])
     def register_file(self, **kwargs):
         # reg file, add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
@@ -47,6 +50,7 @@ class dirServer():
         del self.machines[file['machine_id']][Id]
         return file
 
+    @check.reqs(['machine_id'])
     def unreg_machine(self, machine_id):
         # get all files from machine_id
         try:
@@ -71,7 +75,7 @@ class dirServer():
         except KeyError:
             print ("file id not found")
             raise my_errors.not_found
-    
+
     def search_filename(self, name):
         # search via name, returns list
         try:
