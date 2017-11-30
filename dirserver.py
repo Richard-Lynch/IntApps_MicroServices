@@ -1,93 +1,88 @@
 #!/usr/local/bin/python3
 import my_errors
 my_errors.make_classes(my_errors.errors)
-import my_fields
-from collections import defaultdict
+# import my_fields
+# from collections import defaultdict
 import check
+# --- mongo ----
+from pymongo import MongoClient
+# from pprint import pprint
+from bson.objectid import ObjectId
+import mongo_stuff
+
 
 class dirServer():
     def __init__(self):
-        self.next_machine = 0
-        self.next_file_id = 0
-        self.files = defaultdict(dict)
-        self.files_Id = {}
-        self.machines = defaultdict(dict)
+        self.load_machines()
+        self.load_files()
 
     # util functions
-    def get_next_machince(self):
-        # lock
-        next_machine = self.next_machine
-        self.next_machine += 1 
-        return next_machine
+    def load_machines(self):
+        # mongo
+        self.db_machines = MongoClient().test_database.db.machines
+        # drop db for testing, will not be in deployed version
+        self.db_machines.drop()
+        print(self.db_machines)
+        return True
 
-    def get_next_file_id(self):
-        # lock
-        current = self.next_file_id
-        self.next_file_id += 1
-        # release
-        return current
+    def load_files(self):
+        # mongo
+        self.db_files = MongoClient().test_database.db.machine_files
+        # drop db for testing, will not be in deployed version
+        self.db_files.drop()
+        print(self.db_files)
+        return True
 
     # registration
     @check.reqs(['name', 'machine_id', 'uri'])
     def register_file(self, **kwargs):
         # reg file, add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
-        # add dir server values
-        Id = self.get_next_file_id()
-        f['_id'] = Id
-        # map via id
-        self.files_Id[f['_id']] = f
-        # map via name
-        self.files[f['name']][f['_id']] = f
-        # map via machine id
-        self.machines[f['machine_id']][f['_id']] = f
-        return f
+        f = {}
+        Id = mongo_stuff.insert(self.db_files, f)
+        return self.get_file(Id)
 
-    def unreg_file(self, _id):
-        file = self.get_file_by_Id(_id)
-        del self.files_Id[_id]
-        del self.files[file['name']][_id]
-        del self.machines[file['machine_id']][_id]
-        return file
+    @check.reqs(['callback'])
+    def register_machine(self, **kwargs):
+        m = {k: v for k, v in kwargs.items()}
+        r = mongo_stuff.insert_or_override(self.db_machines, m)
+        print('registered', r)
+        return r
+
+    def unreg_file(self, Id):
+        return bool(
+            self.db_files.delete_one({
+                '_id': ObjectId(Id)
+            }).deleted_count)
 
     @check.reqs(['machine_id'])
     def unreg_machine(self, machine_id):
-        # get all files from machine_id
-        try:
-            machine = self.machines[machine_id]
-        except KeyError:
-            print ("machine not in machines")
-            raise my_errors.not_found
-        # list of file ids owned registered to this machine
-        Ids = [ Id for Id in machine.keys() ]
-        # unreg each file by id
-        for Id in Ids:
-            self.unreg_file(Id)
-        # unregister the machine itself
-        del self.machines[machine_id]
-        return machine_id
+        self.db_files.delete_many({'machine_id': machine_id})
+        return bool(
+            self.db_machines.delete_many({
+                '_id': ObjectId(machine_id)
+            }).deleted_count)
 
     # retreive files
-    def get_file_by_Id(self, _id):
-        # get via _id
-        try:
-            return self.files_Id[_id]
-        except KeyError:
-            print ("file id not found")
+    def get_file(self, Id):
+        f = self.db_files.find_one({'_id': ObjectId(Id)})
+        if f:
+            return f
+        else:
+            raise my_errors.not_found
+
+    def get_machine(self, Id):
+        m = self.db_machines.find_one({'_id': ObjectId(Id)})
+        if m:
+            return m
+        else:
             raise my_errors.not_found
 
     def search_filename(self, name):
         # search via name, returns list
-        try:
-            return [ v for v in self.files[name].values() ]
-        except KeyError:
-            print ("file name not found")
+        files = self.db_files.find({'name': name})
+        if files:
+            return [f for f in files]
+        else:
+            print("file name not found")
             raise my_errors.not_found
-
-    def list_by_machine(self, machine_id):
-        # search via machine_id, returns list
-        try:
-            return [ v for v in self.machines[machine_id].values() ]
-        except KeyError:
-            raise my_errors.not_found
-        
