@@ -1,43 +1,45 @@
 #!/usr/local/bin/python3
 import sys
-from flask import Flask, jsonify, request, make_response, url_for
-from flask_kerberos import requires_authentication
-from flask_restful import Api, Resource, abort, HTTPException
-from flask_restful import reqparse, fields, marshal
+from flask import Flask
+from flask_restful import Api, Resource
+from flask_restful import reqparse
 from lockserver import lockServer
 import my_errors
 my_errors.make_classes(my_errors.errors)
-import my_fields
 
 # ----- Init -----
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
 
 # ----- Lock -----
+
+
 class LockApi(Resource):
     def __init__(self):
         global lServer
         self.lockServer = lServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('uri', type = str, location = 'json', help = "No filename provided")
+        self.reqparse.add_argument(
+            'uri', type=str, location='json', help="No filename provided")
         super(LockApi, self).__init__()
 
     def get(self):
-        print ("checking lock")
+        print("checking lock")
         args = self.reqparse.parse_args()
-        return { 'locked' : self.lockServer.get_lock_status(**args) }
+        return {'locked': self.lockServer.get_lock_status(**args)}
 
     def post(self):
-        print ("aquireing new lock")
+        print("aquireing new lock")
         args = self.reqparse.parse_args()
-        return { 'locked' : self.lockServer.lock_file(**args) }
+        return {'locked': self.lockServer.lock_file(**args)}
 
     def delete(self):
-        print ("removing lock")
+        print("removing lock")
         args = self.reqparse.parse_args()
-        return { 'unlocked' : self.lockServer.unlock_file(**args) }
+        return {'unlocked': self.lockServer.unlock_file(**args)}
 
-api.add_resource(LockApi, '/lock', endpoint = 'lock')
+
+api.add_resource(LockApi, '/lock', endpoint='lock')
 
 # ----- Main -----
 if __name__ == '__main__':
@@ -47,4 +49,3 @@ if __name__ == '__main__':
         port = int(sys.argv[1])
     lServer = lockServer()
     app.run(host='0.0.0.0', debug=True, port=port)
-

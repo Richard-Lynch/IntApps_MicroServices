@@ -29,7 +29,7 @@ register_fields = {
 }
 register_machine_fields = {'callback': fields.String}
 registered_machine_fields = {
-    '_id': Objectid(default='issue'),
+    '_id': Objectid(default='000000000000000000000000'),
 }
 registered_fields = {
     'name': fields.String,

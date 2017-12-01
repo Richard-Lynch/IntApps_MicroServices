@@ -1,16 +1,12 @@
 #!/usr/local/bin/python3
 import requests
-# import sys
-# from flask_kerberos import requires_authentication
 from flask_restful import marshal
-# from collections import defaultdict
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 import check
 # --- mongo ----
 from pymongo import MongoClient
-# from pprint import pprint
 from bson.objectid import ObjectId
 import mongo_stuff
 
@@ -47,14 +43,13 @@ class fileServer():
         print(r)
         if 'machine' in r:
             self.machine_id = r['machine'].get('_id', -1)
+            return True
         else:
-            self.machine_id = '1'
+            self.machine_id = '-1'
             print('issue')
-            # raise my_errors.bad_request
-        return True
+            return False
 
     def load_files(self):
-        # mongo
         self.db_files = MongoClient().test_database.db.files
         # drop db for testing, will not be in deployed version
         self.db_files.drop()
@@ -86,24 +81,19 @@ class fileServer():
                 self.dirServerAdd + '/register',
                 json=dict(marshal(f, my_fields.register_fields))).json()
             print('r', r)
-            if 'file' in r:
-                reg_uri = r['file']['reg_uri']
-                self.db_files.update_one({
-                    '_id': ObjectId(Id)
-                }, {
-                    '$set': {
-                        'reg_uri': reg_uri
-                    }
-                })
-            else:
-                raise my_errors.bad_request
+            # TODO register should use find_one_and_update
+            self.db_files.update_one({
+                '_id': ObjectId(Id)
+            }, {
+                '$set': {
+                    'reg_uri': r['file']['reg_uri']
+                }
+            })
         except Exception:
             raise my_errors.bad_request
 
     def un_register_file(self, Id):
-        # unregister with the dir server
         f = self.get_file(Id)
-        # return the response from the request
         return requests.delete(f['reg_uri']).json()
 
     def un_register_all_files(self):
@@ -133,22 +123,20 @@ class fileServer():
         f = {k: v for k, v in kwargs.items()}
         f['machine_id'] = self.machine_id
         Id = mongo_stuff.insert(self.db_files, f)
+        # TODO register should use find_one_and_update
         self.register_file(Id)
         return self.get_file(Id)
 
     def update_file(self, args, Id):
         # filter the args, if none dont set
         kwargs = {k: v for k, v in args.items() if v}
-        # update a file on the fileserver
         return self.db_files.find_one_and_update({
             '_id': ObjectId(Id)
         }, {
             '$set': kwargs
         })
-        # return self.get_file(Id)
 
     def del_file(self, Id):
-        # delete a file from the server
         self.un_register(Id)
         return bool(
             self.db_files.delete_one({

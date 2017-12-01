@@ -1,12 +1,9 @@
 #!/usr/local/bin/python3
 import my_errors
 my_errors.make_classes(my_errors.errors)
-# import my_fields
-# from collections import defaultdict
 import check
 # --- mongo ----
 from pymongo import MongoClient
-# from pprint import pprint
 from bson.objectid import ObjectId
 import mongo_stuff
 
@@ -18,7 +15,6 @@ class dirServer():
 
     # util functions
     def load_machines(self):
-        # mongo
         self.db_machines = MongoClient().test_database.db.machines
         # drop db for testing, will not be in deployed version
         self.db_machines.drop()
@@ -26,7 +22,6 @@ class dirServer():
         return True
 
     def load_files(self):
-        # mongo
         self.db_files = MongoClient().test_database.db.machine_files
         # drop db for testing, will not be in deployed version
         self.db_files.drop()
@@ -38,7 +33,6 @@ class dirServer():
     def register_file(self, **kwargs):
         # reg file, add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
-        f = {}
         Id = mongo_stuff.insert(self.db_files, f)
         return self.get_file(Id)
 

@@ -1,15 +1,12 @@
 #!/usr/local/bin/python3
 import sys
 from flask import Flask
-# from flask_kerberos import requires_authentication
 from flask_restful import Api, Resource
 from flask_restful import reqparse, marshal
-# import requests
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 from fileserver import fileServer
-# ----- Files DB -----
 
 # ----- Init -----
 app = Flask(__name__)
