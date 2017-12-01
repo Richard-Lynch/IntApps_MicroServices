@@ -16,7 +16,7 @@ json_template='{
 address="http://127.0.0.1:8083/auth"
 jq -n --arg v1 "$V1" \
     --arg v2 "$V2" "$json_template" |
-    curl -i -X PUT \
+    curl -i -X POST \
     -H "Content-Type: application/json" \
     -d@- \
     "$address"
