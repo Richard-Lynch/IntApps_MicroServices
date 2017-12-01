@@ -5,14 +5,23 @@ my_errors.make_classes(my_errors.errors)
 
 def reqs(reqs):
     def wrap(f):
-        def wrapped_f(self, **args):
+        def wrapped_f(self, *args, **kwargs):
+            print('in reqs')
             # ensure the requirements are met
-            if all(req in args for req in reqs):
+            print('kwargs')
+            for k, v in kwargs.items():
+                print(k, v)
+            print('args')
+            for v in args:
+                print(v)
+            print('checking')
+            if all(req in kwargs for req in reqs):
                 # filter un-required keywords
-                kwargs = {req: args[req] for req in reqs}
+                kwargs = {req: kwargs[req] for req in reqs}
                 # call func
-                return f(self, **kwargs)
+                return f(self, *args, **kwargs)
             else:
+                print('not meeting reqs')
                 raise my_errors.bad_request
 
         return wrapped_f

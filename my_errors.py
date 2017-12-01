@@ -7,7 +7,7 @@ errors = {
         'status': 404,
     },
     'user_not_found': {
-        'message': 'ahh couldnt find the user',
+        'message': 'User Not Found',
         'status': 404,
     },
     'user_exists': {
@@ -23,7 +23,11 @@ errors = {
         'status': 400,
     },
     'unauthorized': {
-        'message': 'Unauthorized Acces',
+        'message': 'Unauthorized Access',
+        'status': 403,
+    },
+    'bad_password': {
+        'message': 'Incorrect Password',
         'status': 403,
     },
 }

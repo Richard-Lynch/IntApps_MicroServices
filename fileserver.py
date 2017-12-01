@@ -5,15 +5,20 @@ import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 import check
-# --- mongo ----
+import decrypt_message
+# --- security ---
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+# --- mongo ---
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import mongo_stuff
 
 
 class fileServer():
-    def __init__(self, port):
-        # main
+    def __init__(self,
+                 port,
+                 secret_key='the quick brown fox jumps over the lazy dog'):
+        self.s = Serializer(secret_key)
         self.machine_id = None
         self.load_files()
         self.dirServerAdd = "http://127.0.0.1:8081/dirs"
@@ -89,6 +94,7 @@ class fileServer():
                     'reg_uri': r['file']['reg_uri']
                 }
             })
+            return r
         except Exception:
             raise my_errors.bad_request
 
@@ -108,8 +114,9 @@ class fileServer():
 
 # file edits
 
+    @decrypt_message.with_token
     @check.reqs(['name', 'content'])
-    def add_file(self, **kwargs):
+    def add_file(self, *args, **kwargs):
         # example of file doc stored in mongo:
         # {
         #     '_id': 'abc123',
@@ -125,17 +132,20 @@ class fileServer():
         Id = mongo_stuff.insert(self.db_files, f)
         # TODO register should use find_one_and_update
         self.register_file(Id)
-        return self.get_file(Id)
+        return self.get_internal_file(Id)
 
-    def update_file(self, args, Id):
+    @decrypt_message.with_token
+    @check.reqs(['name', 'content'])
+    def update_file(self, Id, **kwargs):
         # filter the args, if none dont set
-        kwargs = {k: v for k, v in args.items() if v}
+        kwargs = {k: v for k, v in kwargs.items() if v}
         return self.db_files.find_one_and_update({
             '_id': ObjectId(Id)
         }, {
             '$set': kwargs
         })
 
+    @decrypt_message.with_token
     def del_file(self, Id):
         self.un_register(Id)
         return bool(
@@ -146,7 +156,15 @@ class fileServer():
 
 # return files
 
-    def get_file(self, Id):
+    @decrypt_message.with_token
+    def get_file(self, Id, *args, **kwargs):
+        f = self.db_files.find_one({'_id': ObjectId(Id)})
+        if f:
+            return f
+        else:
+            raise my_errors.not_found
+
+    def get_internal_file(self, Id):
         f = self.db_files.find_one({'_id': ObjectId(Id)})
         if f:
             return f

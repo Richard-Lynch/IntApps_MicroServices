@@ -9,17 +9,25 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
 
 def with_token(f):
     @check.reqs(['token', 'message'])
-    def wrapped_f(self, **kwargs):
+    def wrapped_f(self, *args, **kwargs):
+        print('in token')
         token = kwargs.get('token')
         message = kwargs.get('message')
         try:
             # TODO not using anything except key and timeout for now, but
             # could have other info in the token like permissions etc
+            print('message', message)
             data = self.s.loads(token)
+            print('data')
+            for k, v in data.items():
+                print(k, v)
             # key = data['key']
             s = Serializer(data['key'])
             decoded_message = s.loads(message)
-            return f(self, **decoded_message)
+            print('decoded')
+            for k, v in decoded_message.items():
+                print(k, v)
+            return f(self, *args, **decoded_message)
         except SignatureExpired:
             print('exp')
             # TODO change to sigexpired

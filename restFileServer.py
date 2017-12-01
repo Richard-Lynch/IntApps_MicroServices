@@ -20,9 +20,11 @@ class FilesListApi(Resource):
         global fileS
         self.fileS = fileS
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('name', type=str, location='json')
-        self.reqparse.add_argument(
-            'content', type=str, location='json', default="")
+        self.reqparse.add_argument('token', type=str, location='json')
+        self.reqparse.add_argument('message', type=str, location='json')
+        # self.reqparse.add_argument('name', type=str, location='json')
+        # self.reqparse.add_argument(
+        #     'content', type=str, location='json', default="")
         super(FilesListApi, self).__init__()
 
     def get(self):
@@ -34,13 +36,17 @@ class FilesListApi(Resource):
         }
 
     def post(self):
-        print("adding file")
+        print('in post file')
         args = self.reqparse.parse_args()
         # add the file to the file server
         # return the file summary
+        for k, v in args.items():
+            print(k, v)
+        print("adding file")
         return {
-            "file": marshal(
-                self.fileS.add_file(**args), my_fields.file_fields)
+            "file":
+            marshal(
+                self.fileS.add_file(**args), my_fields.file_summary_fields)
         }
 
     def delete(self):
@@ -59,13 +65,16 @@ class FileApi(Resource):
         global fileS
         self.fileS = fileS
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('name', type=str, location='json')
-        self.reqparse.add_argument('content', type=str, location='json')
+        self.reqparse.add_argument('token', type=str, location='json')
+        self.reqparse.add_argument('message', type=str, location='json')
+        # self.reqparse.add_argument('name', type=str, location='json')
+        # self.reqparse.add_argument('content', type=str, location='json')
         super(FileApi, self).__init__()
 
     def get(self, _id):
         print("getting file")
-        f = self.fileS.get_file(_id)
+        args = self.reqparse.parse_args()
+        f = self.fileS.get_file(_id, **args)
         return {'file': marshal(f, my_fields.file_fields)}
 
     def put(self, _id):

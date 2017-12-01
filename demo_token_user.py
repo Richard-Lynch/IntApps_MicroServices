@@ -1,30 +1,19 @@
 #!/usr/local/bin/python3
 
 import sys
-from flask import Flask, jsonify, request, make_response, url_for, g
-from flask_kerberos import requires_authentication
-from flask_restful import Api, Resource, abort, HTTPException
-from flask_restful import reqparse, fields, marshal
-# from lockserver import lockServer
-from flask_httpauth import HTTPBasicAuth
-from aserver import authServer
+from flask import Flask, g
+from flask_restful import Api, Resource
+from flask_restful import reqparse
 import my_errors
 my_errors.make_classes(my_errors.errors)
-import my_fields
 import check
 import decrypt_message
 
 # ----- Init -----
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
-# --- mongo ----
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-import mongo_stuff
 # --- security --
-from passlib.apps import custom_app_context as pwd_context
-from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
-                          BadSignature, SignatureExpired)
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 
 class demo_tokenApi(Resource):
@@ -43,34 +32,6 @@ class demo_tokenApi(Resource):
 
 
 api.add_resource(demo_tokenApi, '/token', endpoint='token')
-
-
-def decrypt_message_with_token(f):
-    def wrapped_f(self, **kwargs):
-        token = kwargs.get('token')
-        message = kwargs.get('message')
-        try:
-            # TODO not using anything except key and timeout for now, but
-            # could have other info in the token like permissions etc
-            data = self.s.loads(token)
-            # key = data['key']
-            s = Serializer(data['key'])
-            decoded_message = s.loads(message)
-            return f(self, **decoded_message)
-        except SignatureExpired:
-            print('exp')
-            # TODO change to sigexpired
-            raise my_errors.unauthorized
-        except BadSignature:
-            print('bad')
-            # TODO change to badsig
-            raise my_errors.unauthorized
-        except Exception as e:
-            # TODO change to unknown exception
-            print('e', e)
-            raise my_errors.bad_request
-
-    return wrapped_f
 
 
 class demo_token_user():
