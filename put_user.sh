@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/bin/bash
 
 if [[ $# != 2 ]] ; then
     echo "takes exactly 2 args: uri conent"
