@@ -83,19 +83,21 @@ def test_token(token, key):
     return True
 
 
-def encrypt_message(message, key):
-    s = Serializer(key)
-    return s.dumps(message).decode()
-
-
 def make_request(rtype, address):
+    def encrypt_message(message, key):
+        s = Serializer(key)
+        return s.dumps(message).decode()
+
     def make_specific_request(key, *args, **kwargs):
         message = {k: v for k, v in kwargs.items()}
         message = encrypt_message(message, key)
+        print('message', message)
         if len(args) > 0:
             send_to = args[0]
+            print('path', send_to)
         else:
             send_to = address
+            print('address', send_to)
         r = rtype(send_to, json={'token': token.decode(), 'message': message})
         print('r', r)
         j = r.json()
@@ -136,17 +138,56 @@ check_auth(username, password)
 print('generating token')
 token, key = generate_token(username, password)
 
+print('----posting new file: auth1----')
 kwargs = {'name': 'auth1.txt', 'content': 'dont store plain text'}
 result = my_requests['file_server']['post'](key, **kwargs)
 
+print('----posting new file: auth2----')
 kwargs = {'name': 'auth2.txt', 'content': 'dont store plain text'}
 result = my_requests['file_server']['post'](key, **kwargs)
 
-result = my_requests['file_server']['get'](key, **kwargs)
+print('----getting all files----')
+result_files = my_requests['file_server']['get'](key, **kwargs)
+
+print('----getting second file----')
 try:
-    file1 = result['files'][0]
-    path = file1['uri']
+    file2 = result_files['files'][1]
+    path = file2['uri']
     result = my_requests['file_server']['get'](key, path, **kwargs)
 except Exception as e:
     print('didnt work:', e)
+
+print('----updating second file----')
+try:
+    file2 = result_files['files'][1]
+    path = file2['uri']
+    kwargs = {'name': None, 'content': 'SERIOUSY dont store plain text'}
+    result = my_requests['file_server']['put'](key, path, **kwargs)
+except Exception as e:
+    print('didnt work:', e)
+
+print('----getting second file----')
+try:
+    file2 = result_files['files'][1]
+    path = file2['uri']
+    result = my_requests['file_server']['get'](key, path, **kwargs)
+except Exception as e:
+    print('didnt work:', e)
+
+print('----deleting second file----')
+try:
+    file2 = result_files['files'][1]
+    path = file2['uri']
+    result = my_requests['file_server']['delete'](key, path, **kwargs)
+except Exception as e:
+    print('didnt work:', e)
+
+print('----getting second file----')
+try:
+    file2 = result_files['files'][1]
+    path = file2['uri']
+    result = my_requests['file_server']['get'](key, path, **kwargs)
+except Exception as e:
+    print('didnt work:', e)
+
 sys.exit()

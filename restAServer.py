@@ -1,13 +1,13 @@
 #!/usr/local/bin/python3
 import sys
-from flask import Flask, g, jsonify
+from flask import Flask, g
 from flask_restful import Api, Resource
 from flask_restful import reqparse, fields, marshal
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 from flask_httpauth import HTTPBasicAuth
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+# from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 import random
 import string
 # ----- Init -----
@@ -31,7 +31,7 @@ def ver_pass(username, password):
     return True
 
 
-def key_generator(size=12, chars=(string.ascii_letters + string.digits)):
+def key_generator(size=24, chars=(string.ascii_letters + string.digits)):
     return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
 
 

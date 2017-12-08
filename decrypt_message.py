@@ -38,6 +38,7 @@ def with_token(f):
             raise my_errors.unauthorized
         except Exception as e:
             # TODO change to unknown exception
+            # TODO catching get_file raise
             print('e', e)
             raise my_errors.bad_request
 

@@ -99,7 +99,7 @@ class fileServer():
             raise my_errors.bad_request
 
     def un_register_file(self, Id):
-        f = self.get_file(Id)
+        f = self.get_internal_file(Id)
         return requests.delete(f['reg_uri']).json()
 
     def un_register_all_files(self):
@@ -146,8 +146,8 @@ class fileServer():
         })
 
     @decrypt_message.with_token
-    def del_file(self, Id):
-        self.un_register(Id)
+    def del_file(self, Id, **kwargs):
+        self.un_register_file(Id)
         return bool(
             self.db_files.delete_one({
                 '_id': ObjectId(Id)
@@ -158,10 +158,15 @@ class fileServer():
 
     @decrypt_message.with_token
     def get_file(self, Id, *args, **kwargs):
+        print('in get file')
+        print('Id', Id)
         f = self.db_files.find_one({'_id': ObjectId(Id)})
+        print('f', f)
         if f:
             return f
         else:
+            print('raising not found')
+            # TODO this is being caught and discarded by decrypt
             raise my_errors.not_found
 
     def get_internal_file(self, Id):

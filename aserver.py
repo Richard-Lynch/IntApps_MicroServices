@@ -43,13 +43,13 @@ class authServer():
                 }))
 
     def verify_user(self, username, password):
-        try:
-            user_data = self.db_users.find_one({'username': username})
+        user_data = self.db_users.find_one({'username': username})
+        if user_data:
             if pwd_context.verify(password, user_data['password_hash']):
                 return user_data
             else:
-                return False
-                raise my_errors.unauthorized
-        except Exception:
-            return False
-            raise my_errors.unauthorized
+                # return False
+                raise my_errors.bad_password
+        else:
+            # return False
+            raise my_errors.user_not_found
