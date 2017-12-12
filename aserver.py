@@ -25,21 +25,34 @@ class authServer():
         # drop db for testing, will not be in deployed version
         self.db_users.drop()
         print(self.db_users)
+        # create default admin user... clearly this should be much more secure!
+        mongo_stuff.insert(
+            self.db_users, {
+                'username': 'admin',
+                'password': 'admin',
+                'password_hash': pwd_context.encrypt('admin'),
+                'admin': True,
+            })
         return True
 
-    @check.reqs(['username', 'password'])  # now takes args from parser as arg
+    # now takes args from parser as arg
+    @check.reqs(['username', 'password', 'admin'])
     def create_user(self, **kwargs):
         username = kwargs.get('username')
         password = kwargs.get('password')
         password_hash = pwd_context.encrypt(password)
-        if username is None or password is None:
+        admin = kwargs.get('admin')
+        if username is None or password is None or admin is None:
             raise my_errors.bad_request
+        # password should not be stored here, and is not used anywhere else in
+        # the code, it is only stored for testing purposes
         return bool(
             mongo_stuff.insert(
                 self.db_users, {
                     'username': username,
                     'password': password,
                     'password_hash': password_hash,
+                    'admin': admin
                 }))
 
     def verify_user(self, username, password):

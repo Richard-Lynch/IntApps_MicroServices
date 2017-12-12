@@ -45,18 +45,21 @@ class AuthApi(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('username', type=str, location='json')
         self.reqparse.add_argument('password', type=str, location='json')
+        self.reqparse.add_argument('admin', type=bool, location='json')
         self.reqparse.add_argument('hashed', type=str, location='json')
         super(AuthApi, self).__init__()
 
     @auth.login_required
     def get(self):
         print("checking auth")
-        return {'auth': True}
+        return {'auth': True, 'admin': g.user_data['admin']}
 
+    @auth.login_required
     def post(self):
-        print("createing new user")
-        args = self.reqparse.parse_args()
-        return {'created': self.authServer.create_user(**args)}
+        if g.user_data['admin'] is True:
+            print("createing new user")
+            args = self.reqparse.parse_args()
+            return {'created': self.authServer.create_user(**args)}
 
     @auth.login_required
     def put(self, expiration=600):

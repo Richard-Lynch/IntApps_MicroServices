@@ -1,19 +1,17 @@
 #!/usr/local/bin/python3
 from collections import defaultdict
 from flask import Flask, jsonify, request, make_response, url_for
-from flask_kerberos import requires_authentication
-from flask_restful import Api, Resource, abort, HTTPException
-from flask_restful import reqparse, fields, marshal
+# from flask_restful import Api, Resource, abort, HTTPException
+# from flask_restful import reqparse, fields, marshal
 # from lockserver import lockServer
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
-from flask_httpauth import HTTPBasicAuth
+# from flask_httpauth import HTTPBasicAuth
 from pprint import pprint
-from flask_sqlalchemy import SQLAlchemy
 config = {}
 config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy dog'
-from passlib.apps import custom_app_context as pwd_context
+# from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
 import requests

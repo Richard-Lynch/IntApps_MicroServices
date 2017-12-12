@@ -77,13 +77,12 @@ class FileApi(Resource):
     def put(self, _id):
         print("editing file")
         args = self.reqparse.parse_args()
-        f = self.fileS.update_file(_id, **args)
+        f = self.fileS.update_file(args, _id)
         return {"file": marshal(f, my_fields.file_summary_fields)}
 
     def delete(self, _id):
         print("deleting file")
-        args = self.reqparse.parse_args()
-        return {'deleted': self.fileS.del_file(_id, **args)}
+        return {'deleted': self.filesS.del_file(_id)}
 
 
 api.add_resource(FileApi, '/files/<string:_id>', endpoint='file')
