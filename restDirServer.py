@@ -27,8 +27,7 @@ class SearchDirApi(Resource):
 
     def get(self):
         args = self.reqparse.parse_args()
-        F = self.dirServer.search_filename(**args)
-        return {'files': [marshal(f, my_fields.dir_file_fields) for f in F]}
+        return {'message': self.dirServer.search_filename(**args)}
 
 
 api.add_resource(SearchDirApi, '/dirs/search', endpoint='search')
@@ -50,7 +49,7 @@ class FileApi(Resource):
         return {'deleted': r}
 
 
-api.add_resource(FileApi, '/dirs/<string:_id>', endpoint='file')
+api.add_resource(FileApi, '/dirs/files', endpoint='file')
 
 # ---- Register ----
 

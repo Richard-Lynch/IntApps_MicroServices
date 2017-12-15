@@ -7,6 +7,7 @@ import my_fields
 import check
 import decrypt_message
 import send_securily
+from pprint import pprint
 # --- security ---
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 # --- mongo ---
@@ -129,28 +130,33 @@ class fileServer():
         #     'machine_id': '2',
         #     'reg_uri': '127.0.0.1:8081/dirs/123',
         # }
-        #
-        # add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
         f['machine_id'] = self.machine_id
         Id = mongo_stuff.insert(self.db_files, f)
         # TODO register should use find_one_and_update
-        # self.register_file(Id)
+        self.register_file(Id)
         f = self.get_internal_file(Id)
         f['_id'] = str(f['_id'])
         return f
 
     @send_securily.with_token
     @decrypt_message.with_token
-    # @check.reqs(['name', 'content'])
-    def update_file(self, Id, **kwargs):
+    @check.reqs(['name', 'content', '_id'])
+    def update_file(self, **kwargs):
         # filter the args, if none dont set
-        kwargs = {k: v for k, v in kwargs.items() if v}
-        return self.db_files.find_one_and_update({
+        Id = kwargs['_id']
+        print('kwargs')
+        pprint(kwargs)
+        kwargs = {k: v for k, v in kwargs.items() if v and k != '_id'}
+        print('kwargs')
+        pprint(kwargs)
+        f = self.db_files.find_one_and_update({
             '_id': ObjectId(Id)
         }, {
             '$set': kwargs
         })
+
+        return {"file": marshal(f, my_fields.file_summary_fields)}
 
     @send_securily.with_token
     @decrypt_message.with_token

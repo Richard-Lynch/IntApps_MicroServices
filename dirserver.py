@@ -1,6 +1,8 @@
 #!/usr/local/bin/python3
+from flask_restful import marshal
 import my_errors
 my_errors.make_classes(my_errors.errors)
+import my_fields
 import check
 # --- security ---
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
@@ -84,7 +86,8 @@ class dirServer():
         else:
             raise my_errors.not_found
 
-    # @decrypt_message.with_token
+    @send_securily.with_token
+    @decrypt_message.with_token
     @check.reqs(['name'])
     def search_filename(self, *args, **kwargs):
         print('in search')
@@ -96,7 +99,10 @@ class dirServer():
             pprint(files)
             _files = [f for f in files]
             print(_files)
-            return _files
+            return {
+                'files':
+                [marshal(f, my_fields.dir_file_fields) for f in _files]
+            }
 
         else:
             print("file name not found")

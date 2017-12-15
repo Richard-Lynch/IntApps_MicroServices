@@ -23,6 +23,9 @@ def print_requests_response(f):
 def print_response(f):
     def wrapped_f(*args, **kwargs):
         r = f(*args, **kwargs)
+        if r is None:
+            print('no response')
+            return None
         print('response:', r['code'])
         print('json:')
         pprint(r['message'])
@@ -47,6 +50,8 @@ class DFS_client():
         self.files_address = 'http://127.0.0.1:8080/files'
         self.file_address = 'http://127.0.0.1:8080/file'
         self.dir_address = 'http://127.0.0.1:8081/dirs'
+        # self.dir_address = 'http://127.0.0.1:8081/dirs/search'
+        # self.dir_address = 'http://127.0.0.1:8081/dirs/files'
         self.username = username
         self.password = password
         print('u', self.username)
@@ -88,20 +93,19 @@ class DFS_client():
         r = requests.put(
             self.auth_address, auth=(self.username, self.password))
         try:
-            token = r.json()['token'].encode()
-            key = r.json()['key']
-            self.token = token
-            self.key = key
+            self.token = r.json()['token'].encode()
+            self.key = r.json()['key']
             return r
         except Exception:
             print('token not in json')
             return r
 
-    @print_requests_response
-    # @send_securily
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
     def search_for_file(self, *args, **kwargs):
         print('searchign for file')
-        return requests.get(str(self.dir_address) + '/search', **kwargs)
+        return requests.get(self.dir_address + '/search', **kwargs)
 
     @print_response
     @decrypt_message.with_key
@@ -122,15 +126,18 @@ class DFS_client():
     @send_securily.with_key
     def add_file(self, *args, **kwargs):
         print('add file')
-        # for k, v in kwargs.items():
-        # print(k, ":", v)
         return requests.post(self.files_address, **kwargs)
+
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def edit_file(self, *args, **kwargs):
+        print('edit file')
+        return requests.put(self.file_address, **kwargs)
 
     @print_response
     @decrypt_message.with_key
     @send_securily.with_key
     def del_file(self, *args, **kwargs):
         print('deleting')
-        # for k, v in kwargs.items():
-        # print(k, ":", v)
         return requests.delete(self.file_address, **kwargs)

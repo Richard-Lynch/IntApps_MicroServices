@@ -7,14 +7,16 @@ cli = DFS_client('richie', 'pass')
 cli.create_user('admin', 'admin', 'richie', 'pass')
 cli.check_auth()
 cli.generate_token()
-# cli.seach_for_file('test')
 print("GETTING")
 cli.get_all_files()
+
 print("ADDING")
 cli.add_file(name='test.txt', content='hello world')
 cli.add_file(name='test2.txt', content='goobye world')
+
 print("GETTING")
 r = cli.get_all_files()
+
 print('tryign to get all files')
 try:
     if r['code'] == 200:
@@ -24,6 +26,34 @@ try:
             cli.get_file(**{'_id': f['_id']})
 except Exception as e:
     print('error', e)
+
+print('tryign to edit all files')
+try:
+    if r['code'] == 200:
+        msg = r['message']
+        files = msg['files']
+        for f in files:
+            cli.edit_file(**{
+                '_id': f['_id'],
+                'content': 'please no!',
+                'name': None
+            })
+except Exception as e:
+    print('error', e)
+
+print('checking edits')
+try:
+    if r['code'] == 200:
+        msg = r['message']
+        files = msg['files']
+        for f in files:
+            cli.get_file(**{'_id': f['_id']})
+except Exception as e:
+    print('error', e)
+
+print('searching for file')
+cli.search_for_file(**{'name': 'test.txt'})
+
 print('tryign to delete all files')
 try:
     if r['code'] == 200:
@@ -33,4 +63,5 @@ try:
             cli.del_file(**{'_id': f['_id']})
 except Exception as e:
     print('error', e)
+print("GETTING")
 r = cli.get_all_files()
