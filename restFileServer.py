@@ -22,9 +22,6 @@ class FilesListApi(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('token', type=str, location='json')
         self.reqparse.add_argument('message', type=str, location='json')
-        # self.reqparse.add_argument('name', type=str, location='json')
-        # self.reqparse.add_argument(
-        #     'content', type=str, location='json', default="")
         super(FilesListApi, self).__init__()
 
     def get(self):
@@ -40,11 +37,12 @@ class FilesListApi(Resource):
         args = self.reqparse.parse_args()
         # add the file to the file server
         # return the file summary
-        return {
-            "file":
-            marshal(
-                self.fileS.add_file(**args), my_fields.file_summary_fields)
-        }
+        return {'message': self.fileS.add_file(**args)}
+        # return {
+        #     "file":
+        #     marshal(
+        #         self.fileS.add_file(**args), my_fields.file_summary_fields)
+        # }
 
     def delete(self):
         # called to delete the fileserver, testing only

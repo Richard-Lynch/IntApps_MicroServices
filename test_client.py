@@ -90,23 +90,25 @@ def make_request(rtype, address):
         message = {k: v for k, v in kwargs.items()}
         message = encrypt_message(message, key)
         print('message', message)
+        send_to = address
+        print('address', send_to)
         if len(args) > 0:
-            send_to = args[0]
+            send_to += args[0]
             print('path', send_to)
-        else:
-            send_to = address
-            print('address', send_to)
+
         r = rtype(send_to, json={'token': token.decode(), 'message': message})
-        print('r', r)
-        j = r.json()
-        print('j')
-        pprint(j)
-        return j
+        return r
 
     return make_specific_request
 
 
-def make_all_requests(rtypes, addresses):
+def make_all_requests(addresses):
+    rtypes = {
+        'get': requests.get,
+        'post': requests.post,
+        'put': requests.put,
+        'delete': requests.delete,
+    }
     all_requests = defaultdict(dict)
     for ka, va in addresses.items():
         for krt, vrt in rtypes.items():
@@ -114,18 +116,12 @@ def make_all_requests(rtypes, addresses):
     return all_requests
 
 
-rtypes = {
-    'get': requests.get,
-    'post': requests.post,
-    'put': requests.put,
-    'delete': requests.delete,
-}
 addresses = {
     'file_server': file_address,
     'auth_server': auth_address,
     'demo_server': demo_address,
 }
-my_requests = make_all_requests(rtypes, addresses)
+my_requests = make_all_requests(addresses)
 
 print('checking auth before create')
 check_auth(username, password)

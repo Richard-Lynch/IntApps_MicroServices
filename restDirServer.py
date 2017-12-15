@@ -21,12 +21,13 @@ class SearchDirApi(Resource):
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('name', type=str, location='json')
+        self.reqparse.add_argument('message', type=str, location='json')
+        self.reqparse.add_argument('token', type=str, location='json')
         super(SearchDirApi, self).__init__()
 
     def get(self):
-        name = self.reqparse.parse_args().get('name')
-        F = self.dirServer.search_filename(name)
+        args = self.reqparse.parse_args()
+        F = self.dirServer.search_filename(**args)
         return {'files': [marshal(f, my_fields.dir_file_fields) for f in F]}
 
 
@@ -40,12 +41,12 @@ class FileApi(Resource):
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
-        # self.reqparse.add_argument('_id', type=str, location='json')
         super(FileApi, self).__init__()
 
     def delete(self, _id):
         print('unregistering file')
-        r = self.dirServer.unreg_file(_id)
+        args = self.reqparse.parse_args()
+        r = self.dirServer.unreg_file(_id, **args)
         return {'deleted': r}
 
 

@@ -4,42 +4,9 @@ from collections import defaultdict
 import requests
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
-
-# def make_request(rtype, address):
-#     def encrypt_message(message, key):
-#         s = Serializer(key)
-#         return s.dumps(message).decode()
-
-#     def make_specific_request(key, *args, **kwargs):
-#         message = {k: v for k, v in kwargs.items()}
-#         message = encrypt_message(message, key)
-#         print('message', message)
-#         send_to = address
-#         print('address', send_to)
-#         if len(args) > 0:
-#             send_to += args[0]
-#             print('path', send_to)
-
-#         r = rtype(send_to, json={'token': token.decode(), 'message': message})
-#         return r
-
-#     return make_specific_request
-
-
-def send_securily(f):
-    def encrypt_message(message, key):
-        s = Serializer(key)
-        return s.dumps(message).decode()
-
-    def wrapped_f(self, *args, **kwargs):
-        message = {k: v for k, v in kwargs.items()}
-        message = encrypt_message(message, self.key)
-        print('message', message)
-        kwargs = {}
-        kwargs['json'] = {'token': self.token.decode(), 'message': message}
-        return f(*args, **kwargs)
-
-    return wrapped_f
+import send_securily
+import decrypt_message
+import check
 
 
 def print_requests_response(f):
@@ -49,9 +16,22 @@ def print_requests_response(f):
         print('json', r.json())
         return r
 
+    return wrapped_f
+
+
+def print_response(f):
+    def wrapped_f(*args, **kwargs):
+        r = f(*args, **kwargs)
+        print('response:', r['code'])
+        print('json', r['message'])
+        return r
+
+    return wrapped_f
+
 
 class DFS_client():
     def __init__(self, username, password):
+        print('creating user')
         auth_address = 'http://127.0.0.1:8083/auth'
         demo_address = 'http://127.0.0.1:8085/token'
         file_address = 'http://127.0.0.1:8080/files'
@@ -61,30 +41,47 @@ class DFS_client():
             'demo_server': demo_address,
         }
 
-        self.auth_address = 'http://127.0.0.1:8080/auth'
-        self.file_address = 'http://127.0.0.1:8082/files'
-        self.dir_address = 'http://127.0.0.1:8081/dir'
+        self.auth_address = 'http://127.0.0.1:8083/auth'
+        self.file_address = 'http://127.0.0.1:8080/files'
+        self.dir_address = 'http://127.0.0.1:8081/dirs'
         self.username = username
         self.password = password
+        print('u', self.username)
+        print('p', self.password)
 
     # admin tools
     @print_requests_response
-    def create_user(self, admin_username, admin_password, username, password):
+    def create_user(self,
+                    admin_username='admin',
+                    admin_password='admin',
+                    username=None,
+                    password=None,
+                    admin=False):
+        print('createing user')
+        if username is None:
+            username = self.username
         r = requests.post(
             self.auth_address,
             json={'username': username,
-                  'password': password},
+                  'password': password,
+                  'admin': admin},
             auth=(admin_username, admin_password))
         return r
 
     # auth utils
     @print_requests_response
-    def check_auth(self, username, password):
+    def check_auth(self, username=None, password=None):
+        print('checking auth')
+        if username is None:
+            username = self.username
+        if password is None:
+            password = self.password
         r = requests.get(self.auth_address, auth=(username, password))
         return r
 
     @print_requests_response
     def generate_token(self):
+        print('generating token')
         r = requests.put(
             self.auth_address, auth=(self.username, self.password))
         try:
@@ -98,6 +95,32 @@ class DFS_client():
             return r
 
     @print_requests_response
-    @send_securily
+    # @send_securily
+    def search_for_file(self, *args, **kwargs):
+        print('searchign for file')
+        # print('search for file', name)
+        # kwargs = {}
+        # kwargs['json'] = {'name': name}
+        return requests.get(str(self.dir_address) + '/search', **kwargs)
+
+    @print_requests_response
+    # @send_securily
+    def get_all_files(self, *args, **kwargs):
+        print('getting all files')
+        return requests.get(self.file_address, **kwargs)
+
+    @print_requests_response
+    # @send_securily
     def get_file(self, path, *args, **kwargs):
+        print('getting file')
         return requests.get(str(path), **kwargs)
+
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def add_file(self, *args, **kwargs):
+        print('add file')
+        for k, v in kwargs.items():
+            print(k, ":", v)
+        print('done in add file')
+        return requests.post(self.file_address, **kwargs)

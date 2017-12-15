@@ -6,6 +6,7 @@ my_errors.make_classes(my_errors.errors)
 import my_fields
 import check
 import decrypt_message
+import send_securily
 # --- security ---
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 # --- mongo ---
@@ -114,9 +115,13 @@ class fileServer():
 
 # file edits
 
+# @send_securily.with_token
+
+    @send_securily.with_token
     @decrypt_message.with_token
     @check.reqs(['name', 'content'])
     def add_file(self, *args, **kwargs):
+        print('in add file')
         # example of file doc stored in mongo:
         # {
         #     '_id': 'abc123',
@@ -131,8 +136,10 @@ class fileServer():
         f['machine_id'] = self.machine_id
         Id = mongo_stuff.insert(self.db_files, f)
         # TODO register should use find_one_and_update
-        self.register_file(Id)
-        return self.get_internal_file(Id)
+        # self.register_file(Id)
+        f = self.get_internal_file(Id)
+        f['_id'] = str(f['_id'])
+        return f
 
     @decrypt_message.with_token
     @check.reqs(['name', 'content'])
@@ -170,12 +177,19 @@ class fileServer():
             raise my_errors.not_found
 
     def get_internal_file(self, Id):
+        print('in get internal')
         f = self.db_files.find_one({'_id': ObjectId(Id)})
         if f:
+            print('found')
             return f
         else:
+            print('not found')
             raise my_errors.not_found
 
     def get_all_files(self):
         # return a list of values
-        return [f for f in self.db_files.find()]
+        files = [f for f in self.db_files.find()]
+        print(len(files))
+        print('files')
+        print(files)
+        return files

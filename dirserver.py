@@ -2,16 +2,23 @@
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import check
+# --- security ---
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 # --- mongo ----
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import mongo_stuff
+import decrypt_message
+import send_securily
+from pprint import pprint
 
 
 class dirServer():
-    def __init__(self):
+    def __init__(self,
+                 secret_key='the quick brown fox jumps over the lazy dog'):
         self.load_machines()
         self.load_files()
+        self.s = Serializer(secret_key)
 
     # util functions
     def load_machines(self):
@@ -31,8 +38,10 @@ class dirServer():
     # registration
     @check.reqs(['name', 'machine_id', 'uri'])
     def register_file(self, **kwargs):
+        print('in reg')
         # reg file, add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
+        pprint(f)
         Id = mongo_stuff.insert(self.db_files, f)
         return self.get_file(Id)
 
@@ -43,11 +52,14 @@ class dirServer():
         print('registered', r)
         return r
 
-    def unreg_file(self, Id):
-        return bool(
-            self.db_files.delete_one({
-                '_id': ObjectId(Id)
-            }).deleted_count)
+    @check.reqs(['_id'])
+    def unreg_file(self, Id, *args, **kwargs):
+        kwargs['_id'] = ObjectId(kwargs['_id'])
+        return bool(self.db_files.delete_one(kwargs).deleted_count)
+        # return bool(
+        #     self.db_files.delete_one({
+        #         '_id': ObjectId(Id)
+        #     }).deleted_count)
 
     @check.reqs(['machine_id'])
     def unreg_machine(self, machine_id):
@@ -72,11 +84,20 @@ class dirServer():
         else:
             raise my_errors.not_found
 
-    def search_filename(self, name):
+    # @decrypt_message.with_token
+    @check.reqs(['name'])
+    def search_filename(self, *args, **kwargs):
+        print('in search')
         # search via name, returns list
-        files = self.db_files.find({'name': name})
+        print(kwargs)
+        files = self.db_files.find(kwargs)
         if files:
-            return [f for f in files]
+            print('found')
+            pprint(files)
+            _files = [f for f in files]
+            print(_files)
+            return _files
+
         else:
             print("file name not found")
             raise my_errors.not_found
