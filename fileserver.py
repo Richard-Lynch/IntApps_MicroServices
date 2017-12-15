@@ -145,11 +145,7 @@ class fileServer():
     def update_file(self, **kwargs):
         # filter the args, if none dont set
         Id = kwargs['_id']
-        print('kwargs')
-        pprint(kwargs)
         kwargs = {k: v for k, v in kwargs.items() if v and k != '_id'}
-        print('kwargs')
-        pprint(kwargs)
         f = self.db_files.find_one_and_update({
             '_id': ObjectId(Id)
         }, {
