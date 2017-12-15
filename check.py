@@ -6,15 +6,7 @@ my_errors.make_classes(my_errors.errors)
 def reqs(reqs):
     def wrap(f):
         def wrapped_f(self, *args, **kwargs):
-            print('in reqs')
             # ensure the requirements are met
-            print('kwargs')
-            for k, v in kwargs.items():
-                print(k, v)
-            print('args')
-            for v in args:
-                print(v)
-            print('checking')
             if all(req in kwargs for req in reqs):
                 # filter un-required keywords
                 kwargs = {req: kwargs[req] for req in reqs}

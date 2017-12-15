@@ -70,7 +70,7 @@ class fileServer():
 # register
 
     def register_initial_files(self):
-        for f in self.get_all_files():
+        for f in self.get_all_internal_files():
             r = self.register_file(f)
             # should check here if r is correct/valid
             print(r)
@@ -113,9 +113,8 @@ class fileServer():
             }).json()
         print(r)
 
-# file edits
 
-# @send_securily.with_token
+# file edits
 
     @send_securily.with_token
     @decrypt_message.with_token
@@ -141,8 +140,9 @@ class fileServer():
         f['_id'] = str(f['_id'])
         return f
 
+    @send_securily.with_token
     @decrypt_message.with_token
-    @check.reqs(['name', 'content'])
+    # @check.reqs(['name', 'content'])
     def update_file(self, Id, **kwargs):
         # filter the args, if none dont set
         kwargs = {k: v for k, v in kwargs.items() if v}
@@ -152,25 +152,28 @@ class fileServer():
             '$set': kwargs
         })
 
+    @send_securily.with_token
     @decrypt_message.with_token
-    def del_file(self, Id, **kwargs):
-        self.un_register_file(Id)
-        return bool(
-            self.db_files.delete_one({
-                '_id': ObjectId(Id)
-            }).deleted_count)
+    @check.reqs(['_id'])
+    def del_file(self, **kwargs):
+        Id = kwargs.get('_id')
+        # self.un_register_file(Id)
+        return {
+            'deleted':
+            bool(
+                self.db_files.delete_one({
+                    '_id': ObjectId(Id)
+                }).deleted_count)
+        }
 
-
-# return files
-
+    @send_securily.with_token
     @decrypt_message.with_token
-    def get_file(self, Id, *args, **kwargs):
-        print('in get file')
-        print('Id', Id)
+    @check.reqs(['_id'])
+    def get_file(self, *args, **kwargs):
+        Id = kwargs.get('_id')
         f = self.db_files.find_one({'_id': ObjectId(Id)})
-        print('f', f)
         if f:
-            return f
+            return {'file': marshal(f, my_fields.file_fields)}
         else:
             print('raising not found')
             # TODO this is being caught and discarded by decrypt
@@ -186,7 +189,20 @@ class fileServer():
             print('not found')
             raise my_errors.not_found
 
+    @send_securily.with_token
+    @decrypt_message.with_token
     def get_all_files(self):
+        # return a list of values
+        files = [f for f in self.db_files.find()]
+        print(len(files))
+        print('files')
+        print(files)
+        return {
+            'files':
+            [marshal(f, my_fields.file_summary_fields) for f in files]
+        }
+
+    def get_all_internal_files(self):
         # return a list of values
         files = [f for f in self.db_files.find()]
         print(len(files))

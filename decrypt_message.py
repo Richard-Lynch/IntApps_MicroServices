@@ -41,20 +41,17 @@ def with_key(f):
         try:
             s = Serializer(key)
             return s.loads(message)
-        except SignatureExpired:
-            print('exp')
-            # TODO change to sigexpired
-            raise my_errors.unauthorized
-        except BadSignature:
-            print('bad')
-            # TODO change to badsig
-            raise my_errors.unauthorized
         except Exception as e:
             print('error', e)
 
     def wrapped_f(self, *args, **kwargs):
         try:
             r = f(self, *args, **kwargs)
+            print(r.status_code)
+            if r.status_code != 200:
+                print('issues')
+                return {'code': r.status_code, 'message': r.json()}
+
             message = r.json()['message']
             c = r.status_code
             # TODO not using anything except key and timeout for now, but
@@ -64,7 +61,6 @@ def with_key(f):
         except Exception as e:
             # TODO change to unknown exception
             # TODO catching get_file raise
-            # print('e', e)
-            raise my_errors.bad_request
+            print('e', e)
 
     return wrapped_f

@@ -7,6 +7,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
 import send_securily
 import decrypt_message
 import check
+from pprint import pprint
 
 
 def print_requests_response(f):
@@ -23,7 +24,8 @@ def print_response(f):
     def wrapped_f(*args, **kwargs):
         r = f(*args, **kwargs)
         print('response:', r['code'])
-        print('json', r['message'])
+        print('json:')
+        pprint(r['message'])
         return r
 
     return wrapped_f
@@ -42,7 +44,8 @@ class DFS_client():
         }
 
         self.auth_address = 'http://127.0.0.1:8083/auth'
-        self.file_address = 'http://127.0.0.1:8080/files'
+        self.files_address = 'http://127.0.0.1:8080/files'
+        self.file_address = 'http://127.0.0.1:8080/file'
         self.dir_address = 'http://127.0.0.1:8081/dirs'
         self.username = username
         self.password = password
@@ -98,29 +101,36 @@ class DFS_client():
     # @send_securily
     def search_for_file(self, *args, **kwargs):
         print('searchign for file')
-        # print('search for file', name)
-        # kwargs = {}
-        # kwargs['json'] = {'name': name}
         return requests.get(str(self.dir_address) + '/search', **kwargs)
 
-    @print_requests_response
-    # @send_securily
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
     def get_all_files(self, *args, **kwargs):
         print('getting all files')
-        return requests.get(self.file_address, **kwargs)
+        return requests.get(self.files_address, **kwargs)
 
-    @print_requests_response
-    # @send_securily
-    def get_file(self, path, *args, **kwargs):
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def get_file(self, *args, **kwargs):
         print('getting file')
-        return requests.get(str(path), **kwargs)
+        return requests.get(self.file_address, **kwargs)
 
     @print_response
     @decrypt_message.with_key
     @send_securily.with_key
     def add_file(self, *args, **kwargs):
         print('add file')
-        for k, v in kwargs.items():
-            print(k, ":", v)
-        print('done in add file')
-        return requests.post(self.file_address, **kwargs)
+        # for k, v in kwargs.items():
+        # print(k, ":", v)
+        return requests.post(self.files_address, **kwargs)
+
+    @print_response
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def del_file(self, *args, **kwargs):
+        print('deleting')
+        # for k, v in kwargs.items():
+        # print(k, ":", v)
+        return requests.delete(self.file_address, **kwargs)

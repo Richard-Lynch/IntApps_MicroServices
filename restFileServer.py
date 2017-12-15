@@ -26,23 +26,13 @@ class FilesListApi(Resource):
 
     def get(self):
         print("getting all files")
-        files = self.fileS.get_all_files()
-        return {
-            'files':
-            [marshal(f, my_fields.file_summary_fields) for f in files]
-        }
+        args = self.reqparse.parse_args()
+        return {'message': self.fileS.get_all_files(**args)}
 
     def post(self):
         print('in post file')
         args = self.reqparse.parse_args()
-        # add the file to the file server
-        # return the file summary
         return {'message': self.fileS.add_file(**args)}
-        # return {
-        #     "file":
-        #     marshal(
-        #         self.fileS.add_file(**args), my_fields.file_summary_fields)
-        # }
 
     def delete(self):
         # called to delete the fileserver, testing only
@@ -62,28 +52,26 @@ class FileApi(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('token', type=str, location='json')
         self.reqparse.add_argument('message', type=str, location='json')
-        # self.reqparse.add_argument('name', type=str, location='json')
-        # self.reqparse.add_argument('content', type=str, location='json')
         super(FileApi, self).__init__()
 
-    def get(self, _id):
+    def get(self):
         print("getting file")
         args = self.reqparse.parse_args()
-        f = self.fileS.get_file(_id, **args)
-        return {'file': marshal(f, my_fields.file_fields)}
+        return {'message': self.fileS.get_file(**args)}
 
-    def put(self, _id):
+    def put(self):
         print("editing file")
         args = self.reqparse.parse_args()
-        f = self.fileS.update_file(args, _id)
-        return {"file": marshal(f, my_fields.file_summary_fields)}
+        return {'message': self.fileS.update_file(**args)}
+        # return {"file": marshal(f, my_fields.file_summary_fields)}
 
-    def delete(self, _id):
+    def delete(self):
         print("deleting file")
-        return {'deleted': self.filesS.del_file(_id)}
+        args = self.reqparse.parse_args()
+        return {'message': self.fileS.del_file(**args)}
 
 
-api.add_resource(FileApi, '/files/<string:_id>', endpoint='file')
+api.add_resource(FileApi, '/file', endpoint='file')
 
 
 class CallbackApi(Resource):
@@ -99,13 +87,10 @@ api.add_resource(CallbackApi, '/callback', endpoint='callback')
 
 # ----- Main -----
 if __name__ == '__main__':
-    # default port
     port = 8080
-    # if args
     if len(sys.argv) > 1:
         print("taking args")
         port = int(sys.argv[1])
-    # fileS = fileServer()
     with fileServer(port) as fileS:
         if fileS.machine_id is None:
             print("no machine id")
