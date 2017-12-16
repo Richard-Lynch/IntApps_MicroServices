@@ -19,31 +19,31 @@ class LockApi(Resource):
         global lServer
         self.lockServer = lServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument(
-            'uri', type=str, location='json', help="No filename provided")
+        self.reqparse.add_argument('token', type=str, location='json')
+        self.reqparse.add_argument('message', type=str, location='json')
         super(LockApi, self).__init__()
 
     def get(self):
         print("checking lock")
         args = self.reqparse.parse_args()
-        return {'locked': self.lockServer.get_lock_status(**args)}
+        return {'message': self.lockServer.get_lock_status(**args)}
 
     def post(self):
         print("aquireing new lock")
         args = self.reqparse.parse_args()
-        return {'locked': self.lockServer.lock_file(**args)}
+        return {'message': self.lockServer.lock_file(**args)}
 
     def delete(self):
         print("removing lock")
         args = self.reqparse.parse_args()
-        return {'unlocked': self.lockServer.unlock_file(**args)}
+        return {'message': self.lockServer.unlock_file(**args)}
 
 
 api.add_resource(LockApi, '/lock', endpoint='lock')
 
 # ----- Main -----
 if __name__ == '__main__':
-    port = 8083
+    port = 8084
     if len(sys.argv) > 1:
         print("taking args")
         port = int(sys.argv[1])

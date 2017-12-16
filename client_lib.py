@@ -10,6 +10,45 @@ import check
 from pprint import pprint
 
 
+def extract_token(f):
+    def wrapped_f(self, *args, **kwargs):
+        r = f(self, *args, **kwargs)
+        try:
+            self.token = r.json()['token'].encode()
+            self.key = r.json()['key']
+            print('t, k')
+            print(self.token)
+            print(self.key)
+            return r
+        except Exception:
+            print('token not in json')
+            return r
+
+    return wrapped_f
+
+
+def catch_dead(f):
+    def wrapped_f(*args, **kwargs):
+        try:
+            r = f(*args, **kwargs)
+            return r
+        except requests.exceptions.ConnectionError as e:
+            # at this point, the request has been rejected
+            # by which ever server was being contacted.
+            # it would be a good option for this handler
+            # to call 'self.refresh_machines()', which should call
+            # to the registry server to get one or more new server
+            # addresses to use
+            print('connection error')
+            print(e)
+        except Exception as e:
+            print('exception in catch')
+            print('e', e)
+        return {'message': {}, 'code': 0}
+
+    return wrapped_f
+
+
 def print_requests_response(f):
     def wrapped_f(*args, **kwargs):
         r = f(*args, **kwargs)
@@ -23,9 +62,10 @@ def print_requests_response(f):
 def print_response(f):
     def wrapped_f(*args, **kwargs):
         r = f(*args, **kwargs)
+
         if r is None:
             print('no response')
-            return None
+            return {'message': {}, 'code': 0}
         print('response:', r['code'])
         print('json:')
         pprint(r['message'])
@@ -37,77 +77,72 @@ def print_response(f):
 class DFS_client():
     def __init__(self, username, password):
         print('creating user')
-        auth_address = 'http://127.0.0.1:8083/auth'
-        demo_address = 'http://127.0.0.1:8085/token'
-        file_address = 'http://127.0.0.1:8080/files'
-        self.addresses = {
-            'file_server': file_address,
-            'auth_server': auth_address,
-            'demo_server': demo_address,
-        }
+        self.username = username
+        self.password = password
+        self.key = password
+        self.token = password.encode()
+        self.public_key = 'this simulates a public private key pair'
+        print('u', self.username)
+        print('p', self.password)
+        print('k', self.key)
+        self.get_addresses()
+        print('user created')
 
+    # interal funcs
+    def get_addresses(self):
+        # this should call registry server
+        print('getting addresses')
         self.auth_address = 'http://127.0.0.1:8083/auth'
         self.files_address = 'http://127.0.0.1:8080/files'
         self.file_address = 'http://127.0.0.1:8080/file'
         self.dir_address = 'http://127.0.0.1:8081/dirs'
-        # self.dir_address = 'http://127.0.0.1:8081/dirs/search'
-        # self.dir_address = 'http://127.0.0.1:8081/dirs/files'
-        self.username = username
-        self.password = password
-        print('u', self.username)
-        print('p', self.password)
+        self.lock_address = 'http://127.0.0.1:8084/lock'
 
-    # admin tools
-    @print_requests_response
-    def create_user(self,
-                    admin_username='admin',
-                    admin_password='admin',
-                    username=None,
-                    password=None,
-                    admin=False):
+    @print_response
+    @catch_dead
+    @decrypt_message.with_key
+    @send_securily.with_credentials
+    def create_user(self, *args, **kwargs):
         print('createing user')
-        if username is None:
-            username = self.username
-        r = requests.post(
-            self.auth_address,
-            json={'username': username,
-                  'password': password,
-                  'admin': admin},
-            auth=(admin_username, admin_password))
+        pprint(kwargs)
+        r = requests.post(self.auth_address, **kwargs)
         return r
 
     # auth utils
-    @print_requests_response
-    def check_auth(self, username=None, password=None):
+    @print_response
+    @catch_dead
+    @decrypt_message.with_key
+    @send_securily.with_credentials
+    def check_auth(self, *args, **kwargs):
         print('checking auth')
-        if username is None:
-            username = self.username
-        if password is None:
-            password = self.password
-        r = requests.get(self.auth_address, auth=(username, password))
+        r = requests.get(self.auth_address, **kwargs)
         return r
 
-    @print_requests_response
-    def generate_token(self):
+    @print_response
+    @catch_dead
+    @extract_token
+    @decrypt_message.with_key
+    @send_securily.with_credentials
+    def generate_token(self, *args, **kwargs):
         print('generating token')
-        r = requests.put(
-            self.auth_address, auth=(self.username, self.password))
-        try:
-            self.token = r.json()['token'].encode()
-            self.key = r.json()['key']
-            return r
-        except Exception:
-            print('token not in json')
-            return r
+        # NOTE: it is presumed that this first call is 'secure'
+        # probably by encrypting the username and password using
+        # public private key encrytion with the auth server,
+        # and that the response would be encrypted with the users
+        # password to ensure that the message is genuine: this is the third key
+        r = requests.put(self.auth_address, **kwargs)
+        return r
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def search_for_file(self, *args, **kwargs):
-        print('searchign for file')
+        print('searching for file')
         return requests.get(self.dir_address + '/search', **kwargs)
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def get_all_files(self, *args, **kwargs):
@@ -115,6 +150,7 @@ class DFS_client():
         return requests.get(self.files_address, **kwargs)
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def get_file(self, *args, **kwargs):
@@ -122,6 +158,7 @@ class DFS_client():
         return requests.get(self.file_address, **kwargs)
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def add_file(self, *args, **kwargs):
@@ -129,6 +166,7 @@ class DFS_client():
         return requests.post(self.files_address, **kwargs)
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def edit_file(self, *args, **kwargs):
@@ -136,8 +174,33 @@ class DFS_client():
         return requests.put(self.file_address, **kwargs)
 
     @print_response
+    @catch_dead
     @decrypt_message.with_key
     @send_securily.with_key
     def del_file(self, *args, **kwargs):
         print('deleting')
         return requests.delete(self.file_address, **kwargs)
+
+    @print_response
+    @catch_dead
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def lock_file(self, *args, **kwargs):
+        print('lock')
+        return requests.post(self.lock_address, **kwargs)
+
+    @print_response
+    @catch_dead
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def unlock_file(self, *args, **kwargs):
+        print('unlock')
+        return requests.delete(self.lock_address, **kwargs)
+
+    @print_response
+    @catch_dead
+    @decrypt_message.with_key
+    @send_securily.with_key
+    def check_lock_file(self, *args, **kwargs):
+        print('check lock')
+        return requests.get(self.lock_address, **kwargs)

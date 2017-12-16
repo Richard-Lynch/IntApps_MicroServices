@@ -26,8 +26,24 @@ errors = {
         'message': 'Unauthorized Access',
         'status': 403,
     },
-    'bad_password': {
-        'message': 'Incorrect Password',
+    'unauthorized_bad_sig': {
+        'message': 'Unauthorized Access: Bad Signature',
+        'status': 403,
+    },
+    'unauthorized_sig_expired': {
+        'message': 'Unauthorized Access: Signature Expired',
+        'status': 403,
+    },
+    'unauthorized_user_not_found': {
+        'message': 'Unauthorized Access: User not found',
+        'status': 403,
+    },
+    'unauthorized_bad_password': {
+        'message': 'Unauthorized Access: Bad password',
+        'status': 403,
+    },
+    'unauthorized_bad_request': {
+        'message': 'Unauthorized Access: Bad request',
         'status': 403,
     },
 }

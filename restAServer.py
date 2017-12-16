@@ -1,4 +1,5 @@
 #!/usr/local/bin/python3
+
 import sys
 from flask import Flask, g
 from flask_restful import Api, Resource
@@ -15,8 +16,6 @@ from aserver import authServer
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
 auth = HTTPBasicAuth()
-# this should be set up more safely, key thrown away after serializer created etc
-app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy dog'
 
 
 @auth.error_handler
@@ -31,10 +30,6 @@ def ver_pass(username, password):
     return True
 
 
-def key_generator(size=24, chars=(string.ascii_letters + string.digits)):
-    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
-
-
 # ----- Auth -----
 
 
@@ -43,33 +38,24 @@ class AuthApi(Resource):
         global aServer
         self.authServer = aServer
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('username', type=str, location='json')
-        self.reqparse.add_argument('password', type=str, location='json')
-        self.reqparse.add_argument('admin', type=bool, location='json')
-        self.reqparse.add_argument('hashed', type=str, location='json')
+        self.reqparse.add_argument('message', type=str, location='json')
+        self.reqparse.add_argument('token', type=str, location='json')
         super(AuthApi, self).__init__()
 
-    @auth.login_required
     def get(self):
         print("checking auth")
-        return {'auth': True, 'admin': g.user_data['admin']}
+        args = self.reqparse.parse_args()
+        return {'message': self.authServer.get_auth_level(**args)}
 
-    @auth.login_required
     def post(self):
-        if g.user_data['admin'] is True:
-            print("createing new user")
-            args = self.reqparse.parse_args()
-            return {'created': self.authServer.create_user(**args)}
+        print('in post')
+        args = self.reqparse.parse_args()
+        return {'message': self.authServer.create_user(**args)}
 
-    @auth.login_required
-    def put(self, expiration=600):
-        # generate_auth_token
-        g.user_data['_id'] = str(g.user_data['_id'])
-        key = key_generator()
-        g.user_data['key'] = key
-        d = self.authServer.s.dumps(g.user_data).decode()
-        # presuming the connection with the client is secure aka HTTPS
-        return {'token': d, 'key': key}
+    def put(self):
+        print('in put')
+        args = self.reqparse.parse_args()
+        return {'message': self.authServer.generate_token(**args)}
 
 
 api.add_resource(AuthApi, '/auth', endpoint='auth')
