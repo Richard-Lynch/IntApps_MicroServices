@@ -1,46 +1,25 @@
 #!/usr/local/bin/python3
 
-import random
 import secrets
 import string
-import sys
-import os
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
 import check
 import decrypt_message
 import send_securily
+import auth_with
 from pprint import pprint
 # --- mongo ----
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 import mongo_stuff
 # --- security --
 from passlib.apps import custom_app_context as pwd_context
-from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
-                          BadSignature, SignatureExpired)
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 
 def key_generator(size=24, chars=(string.ascii_letters + string.digits)):
     return ''.join(secrets.SystemRandom().choice(chars) for _ in range(size))
-
-
-def check_with_credentials(f):
-    @check.reqs(['auth', 'message'])
-    def wrapped_f(self, *args, **kwargs):
-        print('in checked')
-        auth = kwargs.get('auth')
-        message = kwargs.get('message')
-        try:
-            user_data = self.verify_user(**auth)
-            return auth['password'], f(self, user_data, *args, **message)
-        except Exception as e:
-            print('exception in check with c')
-            print(e)
-            raise
-
-    return wrapped_f
 
 
 class authServer():
@@ -69,7 +48,7 @@ class authServer():
 
     @send_securily.with_their_password
     @decrypt_message.with_public_key
-    @check_with_credentials
+    @auth_with.credentials
     @check.reqs(['username', 'password', 'admin'])
     def create_user(self, admin_data, **kwargs):
         username = kwargs.get('username')
@@ -91,7 +70,7 @@ class authServer():
 
     @send_securily.with_their_password
     @decrypt_message.with_public_key
-    @check_with_credentials
+    @auth_with.credentials
     def generate_token(self, user_data, **kwargs):
         user_data['_id'] = str(user_data['_id'])
         key = key_generator()
@@ -101,7 +80,7 @@ class authServer():
 
     @send_securily.with_their_password
     @decrypt_message.with_public_key
-    @check_with_credentials
+    @auth_with.credentials
     def get_auth_level(self, user_data, **kwargs):
         admin = user_data.get('admin')
         return {'auth': True, 'admin': admin}

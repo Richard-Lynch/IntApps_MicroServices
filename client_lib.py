@@ -7,56 +7,8 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
 import send_securily
 import decrypt_message
 import check
+import catch
 from pprint import pprint
-
-
-def extract_token(f):
-    def wrapped_f(self, *args, **kwargs):
-        r = f(self, *args, **kwargs)
-        try:
-            self.token = r.json()['token'].encode()
-            self.key = r.json()['key']
-            print('t, k')
-            print(self.token)
-            print(self.key)
-            return r
-        except Exception:
-            print('token not in json')
-            return r
-
-    return wrapped_f
-
-
-def catch_dead(f):
-    def wrapped_f(*args, **kwargs):
-        try:
-            r = f(*args, **kwargs)
-            return r
-        except requests.exceptions.ConnectionError as e:
-            # at this point, the request has been rejected
-            # by which ever server was being contacted.
-            # it would be a good option for this handler
-            # to call 'self.refresh_machines()', which should call
-            # to the registry server to get one or more new server
-            # addresses to use
-            print('connection error')
-            print(e)
-        except Exception as e:
-            print('exception in catch')
-            print('e', e)
-        return {'message': {}, 'code': 0}
-
-    return wrapped_f
-
-
-def print_requests_response(f):
-    def wrapped_f(*args, **kwargs):
-        r = f(*args, **kwargs)
-        print('response:', r)
-        print('json', r.json())
-        return r
-
-    return wrapped_f
 
 
 def print_response(f):
@@ -98,8 +50,21 @@ class DFS_client():
         self.dir_address = 'http://127.0.0.1:8081/dirs'
         self.lock_address = 'http://127.0.0.1:8084/lock'
 
+    def extract_token(f):
+        def wrapped_f(self, *args, **kwargs):
+            r = f(self, *args, **kwargs)
+            try:
+                self.token = r.json()['token'].encode()
+                self.key = r.json()['key']
+                return r
+            except Exception:
+                print('token not in json')
+                return r
+
+        return wrapped_f
+
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_credentials
     def create_user(self, *args, **kwargs):
@@ -110,7 +75,7 @@ class DFS_client():
 
     # auth utils
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_credentials
     def check_auth(self, *args, **kwargs):
@@ -119,22 +84,17 @@ class DFS_client():
         return r
 
     @print_response
-    @catch_dead
+    @catch.dead
     @extract_token
     @decrypt_message.with_key
     @send_securily.with_credentials
     def generate_token(self, *args, **kwargs):
         print('generating token')
-        # NOTE: it is presumed that this first call is 'secure'
-        # probably by encrypting the username and password using
-        # public private key encrytion with the auth server,
-        # and that the response would be encrypted with the users
-        # password to ensure that the message is genuine: this is the third key
         r = requests.put(self.auth_address, **kwargs)
         return r
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def search_for_file(self, *args, **kwargs):
@@ -142,7 +102,7 @@ class DFS_client():
         return requests.get(self.dir_address + '/search', **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def get_all_files(self, *args, **kwargs):
@@ -150,7 +110,7 @@ class DFS_client():
         return requests.get(self.files_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def get_file(self, *args, **kwargs):
@@ -158,7 +118,7 @@ class DFS_client():
         return requests.get(self.file_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def add_file(self, *args, **kwargs):
@@ -166,7 +126,7 @@ class DFS_client():
         return requests.post(self.files_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def edit_file(self, *args, **kwargs):
@@ -174,7 +134,7 @@ class DFS_client():
         return requests.put(self.file_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def del_file(self, *args, **kwargs):
@@ -182,7 +142,7 @@ class DFS_client():
         return requests.delete(self.file_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def lock_file(self, *args, **kwargs):
@@ -190,7 +150,7 @@ class DFS_client():
         return requests.post(self.lock_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def unlock_file(self, *args, **kwargs):
@@ -198,7 +158,7 @@ class DFS_client():
         return requests.delete(self.lock_address, **kwargs)
 
     @print_response
-    @catch_dead
+    @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key
     def check_lock_file(self, *args, **kwargs):
