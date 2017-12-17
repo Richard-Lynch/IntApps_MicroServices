@@ -27,6 +27,19 @@ def print_response(f):
     return wrapped_f
 
 
+def cache(f):
+    def wrapped_f(self, *args, **kwargs):
+        if kwargs['_id'] in self.cached_files:
+            return {'status': 1, 'message': {'file': kwargs['_id']}}
+        else:
+            r = f(*args, **kwargs)
+            if r['status'] == 200:
+                self.add_to_cache(r['message'])
+            return r
+
+    return wrapped_f
+
+
 class DFS_client():
     def __init__(self, username, password):
         print('creating user')
@@ -39,6 +52,9 @@ class DFS_client():
         print('p', self.password)
         print('k', self.key)
         self.get_addresses()
+        self.cached_files = defaultdict
+        self.cached_files_list = []
+        self.cached_file_limit = 20
         print('user created')
 
     # interal funcs
@@ -58,13 +74,19 @@ class DFS_client():
             try:
                 self.token = r['message']['token'].encode()
                 self.key = r['message']['key']
-                print('got token')
             except KeyError:
                 print('Key error getting token')
                 raise
             return r
 
         return wrapped_f
+
+    def add_to_cache(self, file_data):
+        if len(self.cached_files_list > self.cached_file_limit):
+            f = self.cached_files_list.pop(0)
+            del self.cached_files[f['_id']]
+        self.cached_files[file_data['_id']] = file_data
+        self.cached_files_list.append(file_data)
 
     @print_response
     @catch.dead
@@ -113,6 +135,7 @@ class DFS_client():
         return requests.get(self.files_address, **kwargs)
 
     @print_response
+    @cache
     @catch.dead
     @decrypt_message.with_key
     @send_securily.with_key

@@ -18,6 +18,7 @@ file_summary_fields = {
 file_fields = {
     'name': fields.String,
     'machine_id': fields.String(default=-1),
+    '_id': Objectid(default='000000000000000000000000'),
     'uri': fields.Url('file', absolute=True),
     'https_uri': fields.Url('file', absolute=True, scheme='https'),
     'content': fields.String
