@@ -39,7 +39,7 @@ registered_fields = {
     'name': fields.String,
     'machine_id': fields.String(default=-1),
     'reg_id': Objectid(attribute='_id'),
-    'reg_uri': fields.Url('file', absolute=True),
+    'reg_uri': fields.Url('register', absolute=True),
 }
 dir_file_fields = {
     'name': fields.String,

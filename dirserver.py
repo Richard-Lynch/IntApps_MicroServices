@@ -27,23 +27,22 @@ class dirServer():
         self.db_machines = MongoClient().test_database.db.machines
         # drop db for testing, will not be in deployed version
         self.db_machines.drop()
-        print(self.db_machines)
+        # print(self.db_machines)
         return True
 
     def load_files(self):
         self.db_files = MongoClient().test_database.db.machine_files
         # drop db for testing, will not be in deployed version
         self.db_files.drop()
-        print(self.db_files)
+        # print(self.db_files)
         return True
 
     # registration
     @check.reqs(['name', 'machine_id', 'uri'])
     def register_file(self, **kwargs):
-        print('in reg')
+        # print('in reg')
         # reg file, add every keyword arg (filtered by api)
         f = {k: v for k, v in kwargs.items()}
-        pprint(f)
         Id = mongo_stuff.insert(self.db_files, f)
         return self.get_file(Id)
 
@@ -51,35 +50,26 @@ class dirServer():
     def register_machine(self, **kwargs):
         m = {k: v for k, v in kwargs.items()}
         r = mongo_stuff.insert_or_override(self.db_machines, m)
-        print('registered', r)
+        # print('registered', r)
         return r
 
     @check.reqs(['_id'])
     def unreg_file(self, *args, **kwargs):
-        print('in unreg')
-        print('k1')
-        print(kwargs)
+        # print('in unreg file')
         kwargs['_id'] = ObjectId(kwargs['_id'])
-        print('k2')
-        print(kwargs)
-        d = self.db_files.delete_one(kwargs)
-        print('d')
-        pprint(d)
-        c = d.deleted_count
-        print('c')
-        print(c)
-        return bool(c)
+        return bool(self.db_files.delete_one(kwargs).deleted_count)
 
     @check.reqs(['machine_id'])
     def unreg_machine(self, machine_id):
+        # print('in unreg machine')
         self.db_files.delete_many({'machine_id': machine_id})
         return bool(
             self.db_machines.delete_many({
                 '_id': ObjectId(machine_id)
             }).deleted_count)
 
-    # retreive files
     def get_file(self, Id):
+        # print('in get file')
         f = self.db_files.find_one({'_id': ObjectId(Id)})
         if f:
             return f
@@ -87,6 +77,7 @@ class dirServer():
             raise my_errors.not_found
 
     def get_machine(self, Id):
+        # print('in get machine')
         m = self.db_machines.find_one({'_id': ObjectId(Id)})
         if m:
             return m
@@ -97,20 +88,16 @@ class dirServer():
     @decrypt_message.with_token
     @check.reqs(['name'])
     def search_filename(self, *args, **kwargs):
-        print('in search')
+        # print('in search')
         # search via name, returns list
-        print(kwargs)
         files = self.db_files.find(kwargs)
         if files:
-            print('found')
-            pprint(files)
             _files = [f for f in files]
-            print(_files)
             return {
                 'files':
                 [marshal(f, my_fields.dir_file_fields) for f in _files]
             }
 
         else:
-            print("file name not found")
+            # print("file name not found")
             raise my_errors.not_found

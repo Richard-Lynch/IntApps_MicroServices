@@ -41,7 +41,7 @@ class fileServer():
 # util functions
 
     def register_machine(self):
-        r = requests.post(
+        r = requests.get(
             self.dirServerAdd + '/register',
             json=dict(
                 marshal({
@@ -84,7 +84,7 @@ class fileServer():
             f = self.db_files.find_one({'_id': Id})
             print('found file')
             print(f)
-            r = requests.put(
+            r = requests.post(
                 self.dirServerAdd + '/register',
                 json=dict(marshal(f, my_fields.register_fields))).json()
             print('request')
@@ -110,10 +110,7 @@ class fileServer():
         if f:
             print('found')
             print(f)
-            return requests.delete(
-                f['reg_uri'], json={
-                    '_id': f['reg_id']
-                }).json()
+            return requests.put(f['reg_uri'], json={'_id': f['reg_id']}).json()
         else:
             print('not found')
             raise my_errors.not_found

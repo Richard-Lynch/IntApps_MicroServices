@@ -24,7 +24,7 @@ def test_setup():
     print('CHECKING AUTH')
     cli2.check_auth()
 
-    print("GETTING")
+    print("GETTING ALL")
     cli.get_all_files()
 
 
@@ -36,10 +36,10 @@ def test_adding():
 
 def test_get_all():
     global r
-    print("GETTING")
+    print("GETTING ALL")
     r = cli.get_all_files()
 
-    print('tryign to get all files')
+    print('GETTING INDIVIDUAL')
     try:
         if r['status'] == 200:
             msg = r['message']
@@ -77,25 +77,19 @@ def test_edits():
     except Exception as e:
         print('error', e)
 
-    print('checking edits')
+    print('CHECKING EDITS')
     try:
         if r['status'] == 200:
-            print('r')
-            print(r)
             msg = r['message']
             files = msg['files']
-            print('files')
-            pprint(files)
             for f in files:
-                print('getting file')
-                print(f)
                 cli.get_file(**{'_id': f['_id']})
     except Exception as e:
         print('error', e)
 
 
 def test_search():
-    print('searching for files')
+    print('SEARCHING')
     cli.search_for_file(**{'name': 'test.txt'})
 
 
@@ -104,7 +98,7 @@ def test_delete():
     print("GETTING")
     r = cli.get_all_files()
 
-    print('tryign to delete all files')
+    print('DELETING INDIVIDUAL')
     try:
         if r['status'] == 200:
             msg = r['message']
@@ -123,30 +117,30 @@ def test_lock():
     print("GETTING")
     r = cli.get_all_files()
 
-    print('tring to lock all files')
+    print('LOCKING ALL')
     try:
         if r['status'] == 200:
             msg = r['message']
             files = msg['files']
-            print('CHECKING')
+            print('CHECKING LOCK STATUS')
             for f in files:
                 cli.check_lock_file(**{'uri': f['uri'], '_fid': f['_id']})
             print("LOCKING")
             for f in files:
                 cli.lock_file(**{'uri': f['uri'], '_fid': f['_id']})
-            print('CHECKING')
+            print('CHECKING LOCK STATUS')
             for f in files:
                 cli.check_lock_file(**{'uri': f['uri'], '_fid': f['_id']})
-            print('LOCKING')
+            print('TRYING TO RE-LOCK')
             for f in files:
                 cli.lock_file(**{'uri': f['uri'], '_fid': f['_id']})
-            print('CHECKING')
+            print('CHECKING LOCK STATUS')
             for f in files:
                 cli.check_lock_file(**{'uri': f['uri'], '_fid': f['_id']})
             print('UNLOCKING')
             for f in files:
                 cli.unlock_file(**{'uri': f['uri'], '_fid': f['_id']})
-            print('CHECKING')
+            print('CHECKING LOCK STATUS')
             for f in files:
                 cli.check_lock_file(**{'uri': f['uri'], '_fid': f['_id']})
     except Exception as e:
@@ -159,5 +153,5 @@ if __name__ == "__main__":
     test_get_all()
     test_search()
     test_edits()
-    # test_lock()
+    test_lock()
     test_delete()
