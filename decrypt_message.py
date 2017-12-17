@@ -4,25 +4,10 @@ import my_errors
 my_errors.make_classes(my_errors.errors)
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
+import catch
 
 
-def catch_decode(f):
-    def wrapped_f(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except SignatureExpired:
-            print('exp')
-            raise my_errors.unauthorized_sig_expired
-        except BadSignature:
-            print('bad')
-            raise my_errors.unauthorized_bad_sig
-        except Exception:
-            raise
-
-    return wrapped_f
-
-
-@catch_decode
+@catch.decode
 def with_token(f):
     @check.reqs(['token', 'message'])
     def wrapped_f(self, *args, **kwargs):
@@ -36,29 +21,45 @@ def with_token(f):
     return wrapped_f
 
 
-@catch_decode
+@catch.decode
 def with_key(f):
     def decrypt_m(message, key):
         s = Serializer(key)
         return s.loads(message)
 
     def wrapped_f(self, *args, **kwargs):
-        print('in with key')
         r = f(self, *args, **kwargs)
-        print(r.status_code)
         if r.status_code != 200:
-            print('issues')
-            return {'code': r.status_code, 'message': r.json()}
+            return {'status': r.status_code, 'message': r.json()}
 
         message = r.json()['message']
         c = r.status_code
         decoded_message = decrypt_m(message, self.key)
-        return {'code': c, 'message': decoded_message}
+        return {'status': c, 'message': decoded_message}
 
     return wrapped_f
 
 
-@catch_decode
+@catch.decode
+def with_password(f):
+    def decrypt_m(message, key):
+        s = Serializer(key)
+        return s.loads(message)
+
+    def wrapped_f(self, *args, **kwargs):
+        r = f(self, *args, **kwargs)
+        if r.status_code != 200:
+            return {'status': r.status_code, 'message': r.json()}
+
+        message = r.json()['message']
+        c = r.status_code
+        decoded_message = decrypt_m(message, self.password)
+        return {'status': c, 'message': decoded_message}
+
+    return wrapped_f
+
+
+@catch.decode
 def with_public_key(f):
     @check.reqs(['message'])
     def wrapped_f(self, *args, **kwargs):

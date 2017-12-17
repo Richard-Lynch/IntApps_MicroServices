@@ -17,10 +17,11 @@ def print_response(f):
 
         if r is None:
             print('no response')
-            return {'message': {}, 'code': 0}
-        print('response:', r['code'])
+            return {'message': {}, 'status': 0}
+        print('response:', r['status'])
         print('json:')
         pprint(r['message'])
+        print("DONE")
         return r
 
     return wrapped_f
@@ -52,14 +53,16 @@ class DFS_client():
 
     def extract_token(f):
         def wrapped_f(self, *args, **kwargs):
+            print('extracting')
             r = f(self, *args, **kwargs)
             try:
-                self.token = r.json()['token'].encode()
-                self.key = r.json()['key']
-                return r
-            except Exception:
-                print('token not in json')
-                return r
+                self.token = r['message']['token'].encode()
+                self.key = r['message']['key']
+                print('got token')
+            except KeyError:
+                print('Key error getting token')
+                raise
+            return r
 
         return wrapped_f
 
@@ -76,7 +79,7 @@ class DFS_client():
     # auth utils
     @print_response
     @catch.dead
-    @decrypt_message.with_key
+    @decrypt_message.with_password
     @send_securily.with_credentials
     def check_auth(self, *args, **kwargs):
         print('checking auth')
@@ -86,7 +89,7 @@ class DFS_client():
     @print_response
     @catch.dead
     @extract_token
-    @decrypt_message.with_key
+    @decrypt_message.with_password
     @send_securily.with_credentials
     def generate_token(self, *args, **kwargs):
         print('generating token')

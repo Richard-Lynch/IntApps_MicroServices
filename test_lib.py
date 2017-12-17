@@ -6,19 +6,25 @@ from bson.objectid import ObjectId
 def test_setup():
     global cli
     cli = DFS_client('admin', 'admin')
+    print('CREATEING RICHIE')
     cli.create_user(**{
         'username': 'richie',
         'password': 'pass',
         'admin': False
     })
     cli = DFS_client('richie', 'pass')
+    print('GENERATING TOKEN')
     cli.generate_token()
+    print('CHECKING AUTH')
     cli.check_auth()
+
+    print('TESTING TEMP')
     cli2 = DFS_client('temp', 'nah')
+    print('CHECKING AUTH')
     cli2.check_auth()
 
-    # print("GETTING")
-    # cli.get_all_files()
+    print("GETTING")
+    cli.get_all_files()
 
 
 def test_adding():
@@ -34,7 +40,7 @@ def test_get_all():
 
     print('tryign to get all files')
     try:
-        if r['code'] == 200:
+        if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             for f in files:
@@ -50,7 +56,7 @@ def test_edits():
 
     print('tryign to edit all files')
     try:
-        if r['code'] == 200:
+        if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             for f in files:
@@ -64,7 +70,7 @@ def test_edits():
 
     print('checking edits')
     try:
-        if r['code'] == 200:
+        if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             for f in files:
@@ -85,7 +91,7 @@ def test_delete():
 
     print('tryign to delete all files')
     try:
-        if r['code'] == 200:
+        if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             for f in files:
@@ -104,7 +110,7 @@ def test_lock():
 
     print('tring to lock all files')
     try:
-        if r['code'] == 200:
+        if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             print('CHECKING')
@@ -134,9 +140,9 @@ def test_lock():
 
 if __name__ == "__main__":
     test_setup()
-    # test_adding()
-    # test_get_all()
-    # test_search()
-    # test_edits()
-    # test_lock()
-    # test_delete()
+    test_adding()
+    test_get_all()
+    test_search()
+    test_edits()
+    test_lock()
+    test_delete()

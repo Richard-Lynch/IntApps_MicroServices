@@ -15,20 +15,6 @@ import string
 from aserver import authServer
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
-auth = HTTPBasicAuth()
-
-
-@auth.error_handler
-def auth_error():
-    raise my_errors.unauthorized
-
-
-@auth.verify_password
-def ver_pass(username, password):
-    global aServer
-    g.user_data = aServer.verify_user(username, password)
-    return True
-
 
 # ----- Auth -----
 

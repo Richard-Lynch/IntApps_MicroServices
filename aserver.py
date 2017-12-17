@@ -86,6 +86,7 @@ class authServer():
         return {'auth': True, 'admin': admin}
 
     def verify_user(self, username, password):
+        print('verifying')
         user_data = self.db_users.find_one({'username': username})
         if user_data:
             if pwd_context.verify(password, user_data['password_hash']):
@@ -93,5 +94,4 @@ class authServer():
             else:
                 raise my_errors.unauthorized_bad_password
         else:
-            print('no user')
             raise my_errors.unauthorized_user_not_found
