@@ -12,6 +12,7 @@ file_summary_fields = {
     'name': fields.String,
     'machine_id': fields.String(default=-1),
     '_id': Objectid(default='000000000000000000000000'),
+    'version': fields.Integer(default=-100),
     'uri': fields.Url('file', absolute=True),
     'https_uri': fields.Url('file', absolute=True, scheme='https')
 }
@@ -19,6 +20,7 @@ file_fields = {
     'name': fields.String,
     'machine_id': fields.String(default=-1),
     '_id': Objectid(default='000000000000000000000000'),
+    'version': fields.Integer(default=-100),
     'uri': fields.Url('file', absolute=True),
     'https_uri': fields.Url('file', absolute=True, scheme='https'),
     'content': fields.String
@@ -36,7 +38,8 @@ registered_machine_fields = {
 registered_fields = {
     'name': fields.String,
     'machine_id': fields.String(default=-1),
-    'reg_uri': fields.Url('file', absolute=True)
+    'reg_id': Objectid(attribute='_id'),
+    'reg_uri': fields.Url('file', absolute=True),
 }
 dir_file_fields = {
     'name': fields.String,

@@ -40,12 +40,13 @@ class FileApi(Resource):
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('_id', type=str, location='json')
         super(FileApi, self).__init__()
 
-    def delete(self, _id):
+    def delete(self):
         print('unregistering file')
         args = self.reqparse.parse_args()
-        r = self.dirServer.unreg_file(_id, **args)
+        r = self.dirServer.unreg_file(**args)
         return {'deleted': r}
 
 

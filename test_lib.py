@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 from client_lib import DFS_client
 from bson.objectid import ObjectId
+from pprint import pprint
 
 
 def test_setup():
@@ -54,26 +55,40 @@ def test_edits():
     print("GETTING")
     r = cli.get_all_files()
 
-    print('tryign to edit all files')
+    print('TRYING GOOD EDITS')
     try:
         if r['status'] == 200:
             msg = r['message']
             files = msg['files']
             for f in files:
-                cli.edit_file(**{
-                    '_id': f['_id'],
-                    'content': 'please no!',
-                    'name': None
-                })
+                f['content'] = 'please no!'
+                cli.edit_file(**f)
+    except Exception as e:
+        print('error', e)
+
+    print('TRYING BAD EDITS')
+    try:
+        if r['status'] == 200:
+            msg = r['message']
+            files = msg['files']
+            for f in files:
+                f['content'] = 'please yes!'
+                cli.edit_file(**f)
     except Exception as e:
         print('error', e)
 
     print('checking edits')
     try:
         if r['status'] == 200:
+            print('r')
+            print(r)
             msg = r['message']
             files = msg['files']
+            print('files')
+            pprint(files)
             for f in files:
+                print('getting file')
+                print(f)
                 cli.get_file(**{'_id': f['_id']})
     except Exception as e:
         print('error', e)
@@ -144,5 +159,5 @@ if __name__ == "__main__":
     test_get_all()
     test_search()
     test_edits()
-    test_lock()
+    # test_lock()
     test_delete()

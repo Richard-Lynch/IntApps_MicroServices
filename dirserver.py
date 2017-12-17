@@ -55,13 +55,20 @@ class dirServer():
         return r
 
     @check.reqs(['_id'])
-    def unreg_file(self, Id, *args, **kwargs):
+    def unreg_file(self, *args, **kwargs):
+        print('in unreg')
+        print('k1')
+        print(kwargs)
         kwargs['_id'] = ObjectId(kwargs['_id'])
-        return bool(self.db_files.delete_one(kwargs).deleted_count)
-        # return bool(
-        #     self.db_files.delete_one({
-        #         '_id': ObjectId(Id)
-        #     }).deleted_count)
+        print('k2')
+        print(kwargs)
+        d = self.db_files.delete_one(kwargs)
+        print('d')
+        pprint(d)
+        c = d.deleted_count
+        print('c')
+        print(c)
+        return bool(c)
 
     @check.reqs(['machine_id'])
     def unreg_machine(self, machine_id):
