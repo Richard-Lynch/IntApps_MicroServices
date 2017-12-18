@@ -9,14 +9,17 @@ The file server is the backbone of this system, providing basic file interaction
 It provides two endpoints; File and Files.
 #### File
 To act on an single file.
+
 Call | Purpose
 ---- | ----
 get() | Retrieve a file
 post() | Add a new file
 put() | Edit an exisiting file
 delete() | Delete an existing file
+
 #### Files
 To act on the server
+
 Call | Purpose
 ---- | ----
 get() | Retrieve a list of all files
@@ -27,6 +30,7 @@ The auth server is used for all authenicated communications in this system. It a
 It provides  one endpoint; Auth.
 #### Auth
 To become authorized or create new users if admin.
+
 Call | Purpose
 ---- | ----
 get() | Check client authorization level
@@ -38,11 +42,14 @@ The dir server acts as a way of finding the locaiton of files within the system.
 It provides two endpoints; Search and Register.
 #### Search
 Allows the client to search for a file by name
+
 Call | Purpose
 ---- | ----
 get() | Search for a file by name
+
 #### Register
 Allows machines to register and to register files.
+
 Call | Purpose
 ---- | ----
 get() | Register a new service with the directory server
@@ -55,6 +62,7 @@ The lock server acts as a sepmaphore between clients in the system, allowing the
 It provides one endpoint; Lock
 #### Lock
 Allows the client to interact with locks.
+
 Call | Purpose
 ---- | ----
 get() | Retrieve lock status of file.
