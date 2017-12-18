@@ -1,8 +1,10 @@
 #!/usr/local/bin/python3
 from flask_restful import fields
 
+"""Provides fields to be used with flask_restful.marshal"""
 
 class Objectid(fields.Raw):
+    """Custom field, to typecase ObjectId as str"""
     def format(self, value):
         return str(value)
 

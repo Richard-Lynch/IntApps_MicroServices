@@ -1,4 +1,16 @@
 #!/usr/local/bin/python3
+"""
+This module provides HTTPException classses which can be raised
+
+To add an error, add its name, message and status to the dict
+'errors' below
+
+To include; 
+    import my_errors
+    my_errors.make_classes(my_errors.errors)
+
+"""
+
 # ----- Errors -----
 from flask_restful import HTTPException
 errors = {
@@ -50,22 +62,6 @@ errors = {
 
 
 def make_classes(errors):
-    classes = []
+    """Generate the error classes"""
     for key in errors:
-        d = {}
-        d['code'] = 400
-        myClass = type(key, (HTTPException, ), d)
-        globals()[key] = myClass
-        classes.append(myClass)
-    return classes
-
-
-# make_classes(errors)
-# class not_found(HTTPException):
-#     code = 400
-# class user_not_found(HTTPException):
-#     code = 400
-# class bad_request(HTTPException):
-#     code = 400
-# class unauthorized(HTTPException):
-#     code = 400
+        globals()[key] = type(key, (HTTPException, ), {'code': 400})

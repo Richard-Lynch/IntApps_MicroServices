@@ -1,13 +1,14 @@
 #!/usr/local/bin/python3
-
-import check
 import my_errors
 my_errors.make_classes(my_errors.errors)
-from passlib.apps import custom_app_context as pwd_context
-from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
-                          BadSignature, SignatureExpired)
-from pprint import pprint
+from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer)
 import catch
+"""
+Provides a number of decorators to encrypt messages.
+
+Each of these decorators will need to be decrypted with 
+a corresponding decrypter from its pair module 'decrypt_message' 
+"""
 
 
 def encrypt_message(message, key):

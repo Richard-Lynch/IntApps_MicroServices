@@ -2,9 +2,19 @@
 import check
 import my_errors
 my_errors.make_classes(my_errors.errors)
-from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
-                          BadSignature, SignatureExpired)
+from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer)
 import catch
+"""
+Provides a number of decorators to decode encrypted messages.
+
+Each of these decorators will decrypt a corresponding encryption 
+from its pair module 'send_securily' 
+"""
+
+
+def decrypt_m(message, key):
+    s = Serializer(key)
+    return s.loads(message)
 
 
 @catch.decode
@@ -23,10 +33,6 @@ def with_token(f):
 
 @catch.decode
 def with_key(f):
-    def decrypt_m(message, key):
-        s = Serializer(key)
-        return s.loads(message)
-
     def wrapped_f(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
         if r.status_code != 200:
@@ -42,10 +48,6 @@ def with_key(f):
 
 @catch.decode
 def with_password(f):
-    def decrypt_m(message, key):
-        s = Serializer(key)
-        return s.loads(message)
-
     def wrapped_f(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
         if r.status_code != 200:

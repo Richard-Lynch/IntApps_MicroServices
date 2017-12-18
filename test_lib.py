@@ -3,6 +3,8 @@ from client_lib import DFS_client
 from bson.objectid import ObjectId
 from pprint import pprint
 
+"""Provides a suite to tests the functionality of the project"""
+
 
 def test_setup():
     global cli
