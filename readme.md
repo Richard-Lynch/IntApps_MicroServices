@@ -4,11 +4,10 @@
 ### Overview 
 This project aimed to deliver a simple distributed file system, to specifications provided. 
 
-The services include:
-1. Distributed Transparent File Access (File Server)
+#### 1. Distributed Transparent File Access (File Server)
 The file server is the backbone of this system, providing basic file interactions.
 It provides two endpoints; file and files.
-#### file
+##### file
 Call | Purpose
 ---- | ----
 get | Retrieve a file
