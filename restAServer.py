@@ -1,25 +1,26 @@
 #!/usr/local/bin/python3
-
+# general
 import sys
-from flask import Flask, g
-from flask_restful import Api, Resource
-from flask_restful import reqparse, fields, marshal
+# flask
+from flask import Flask
+from flask_restful import Api, Resource, reqparse
+# classes
+from aserver import authServer
+# my utils
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
-from flask_httpauth import HTTPBasicAuth
-# from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-import random
-import string
+
 # ----- Init -----
-from aserver import authServer
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
 
-# ----- Auth -----
-
 
 class AuthApi(Resource):
+    """
+    Provides API to authorize clients/servers using 3 key mutual authenticaion
+    """
+
     def __init__(self):
         global aServer
         self.authServer = aServer
@@ -29,17 +30,20 @@ class AuthApi(Resource):
         super(AuthApi, self).__init__()
 
     def get(self):
-        print("checking auth")
+        """Check you authorization level"""
+        # print("checking auth")
         args = self.reqparse.parse_args()
         return {'message': self.authServer.get_auth_level(**args)}
 
     def post(self):
-        print('in post')
+        """Create a new user. Requires admin."""
+        # print('in post')
         args = self.reqparse.parse_args()
         return {'message': self.authServer.create_user(**args)}
 
     def put(self):
-        print('in put')
+        """Generate a new token with your credentials"""
+        # print('in put')
         args = self.reqparse.parse_args()
         return {'message': self.authServer.generate_token(**args)}
 
@@ -50,7 +54,7 @@ api.add_resource(AuthApi, '/auth', endpoint='auth')
 if __name__ == '__main__':
     port = 8083
     if len(sys.argv) > 1:
-        print("taking args")
+        # print("taking args")
         port = int(sys.argv[1])
     aServer = authServer()
     app.run(host='0.0.0.0', debug=True, port=port)

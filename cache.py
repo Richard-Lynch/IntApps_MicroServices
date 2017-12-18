@@ -2,14 +2,13 @@
 
 
 def check(f):
+    """A decorator checking for a file in cache before making request"""
+
     def wrapped_f(self, *args, **kwargs):
-        # print('in cache')
         if kwargs['_id'] in self.cached_files:
-            # print('file is cached')
             cached_file = self.get_from_cache(kwargs['_id'])
             return {'status': 200, 'message': {'file': cached_file}}
         else:
-            # print('file is not cached')
             r = f(self, *args, **kwargs)
             if r['status'] == 200:
                 self.add_to_cache(r['message']['file'])
@@ -19,8 +18,9 @@ def check(f):
 
 
 def update_on_add(f):
+    """A decorator updating cache when a new file is addded"""
+
     def wrapped_f(self, *args, **kwargs):
-        # print('in update cache on add')
         r = f(self, *args, **kwargs)
         if r['status'] == 200:
             self.add_to_cache({**kwargs, **r['message']['file']})
@@ -30,8 +30,9 @@ def update_on_add(f):
 
 
 def update_on_edit(f):
+    """A decorator updating cache when a file is edited"""
+
     def wrapped_f(self, *args, **kwargs):
-        # print('in update cache on edit')
         r = f(self, *args, **kwargs)
         if r['status'] == 200:
             self.add_to_cache({**kwargs, **r['message']['file']})

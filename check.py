@@ -4,6 +4,7 @@ my_errors.make_classes(my_errors.errors)
 
 
 def reqs(reqs):
+    """A decorator checking 'reqs' are in kwargs"""
     def wrap(f):
         def wrapped_f(self, *args, **kwargs):
             # ensure the requirements are met
@@ -13,9 +14,6 @@ def reqs(reqs):
                 # call func
                 return f(self, *args, **kwargs)
             else:
-                print('not meeting reqs')
                 raise my_errors.bad_request
-
         return wrapped_f
-
     return wrap

@@ -19,7 +19,6 @@ api = Api(app, errors=my_errors.errors)
 class SearchDirApi(Resource):
     """
     Provides API to search directory server files by name
-
     """
 
     def __init__(self):
@@ -31,39 +30,20 @@ class SearchDirApi(Resource):
         super(SearchDirApi, self).__init__()
 
     def get(self):
-        """
-        Search for an individual file by name
-
-        Passes json arguments from __init__ to the dirServer class
-        """
+        """Search for an individual file by name"""
         args = self.reqparse.parse_args()
         return {'message': self.dirServer.search_filename(**args)}
 
 
 api.add_resource(SearchDirApi, '/dirs/search', endpoint='search')
 
-# class FileApi(Resource):
-#     def __init__(self):
-#         global dServer
-#         self.dirServer = dServer
-#         self.reqparse = reqparse.RequestParser()
-#         self.reqparse.add_argument('_id', type=str, location='json')
-#         super(FileApi, self).__init__()
-
-#     def delete(self):
-#         print('unregistering file')
-#         args = self.reqparse.parse_args()
-#         r = self.dirServer.unreg_file(**args)
-#         return {'deleted': r}
-
-# api.add_resource(FileApi, '/dirs/files', endpoint='file')
-
-# ---- Register ----
-
 
 class RegApi(Resource):
+    """
+    Provides API to regsiter files and machines with dirServer
+    """
+
     def __init__(self):
-        # print("init")
         global dServer
         self.dirServer = dServer
         self.reqparse = reqparse.RequestParser()
@@ -75,7 +55,8 @@ class RegApi(Resource):
         super(RegApi, self).__init__()
 
     def get(self):
-        print("registering new machine")
+        """Register a new fileServer with the dirServer"""
+        # print("registering new machine")
         args = self.reqparse.parse_args()
         return {
             "machine":
@@ -84,32 +65,10 @@ class RegApi(Resource):
                 my_fields.registered_machine_fields)
         }
 
-    # def post(self):
-    #     print("registering new machine")
-    #     args = self.reqparse.parse_args()
-    #     return {
-    #         "machine":
-    #         marshal(
-    #             self.dirServer.register_machine(**args),
-    #             my_fields.registered_machine_fields)
-    #     }
-
-    # def put(self):
-    #     print("registering new file")
-    #     args = self.reqparse.parse_args()
-    #     # add the file to the dir server
-    #     # return the file reg summary
-    #     return {
-    #         "file":
-    #         marshal(
-    #             self.dirServer.register_file(**args),
-    #             my_fields.registered_fields)
-    #     }
     def post(self):
-        print("registering new file")
+        """Register a new file with the dirServer"""
+        # print("registering new file")
         args = self.reqparse.parse_args()
-        # add the file to the dir server
-        # return the file reg summary
         return {
             "file":
             marshal(
@@ -118,16 +77,16 @@ class RegApi(Resource):
         }
 
     def put(self):
-        print('unregistering file')
+        """Unregister (delete) a file from the dirServer"""
+        # print('unregistering file')
         args = self.reqparse.parse_args()
         r = self.dirServer.unreg_file(**args)
         return {'deleted': r}
 
     def delete(self):
-        print('unregistering machine')
+        """Unregister (delete) a machine (and files) from the dirServer"""
+        # print('unregistering machine')
         args = self.reqparse.parse_args()
-        # unregister the machine
-        # return the machine_id
         return {"un_reged": self.dirServer.unreg_machine(**args)}
 
 

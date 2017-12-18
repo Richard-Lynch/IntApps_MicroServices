@@ -10,9 +10,14 @@ from pprint import pprint
 
 
 def auth(f):
+    """Decorator to wrap interation will all servers but AuthServer"""
+    # print the response code and json
     @print_response
+    # catch ConnectionError if server is down
     @catch.dead
+    # decrypt response from server with key
     @decrypt_message.with_key
+    # encrypt outgoing message with key
     @send_securily.with_key
     def wrapped_f(*args, **kwargs):
         return f(*args, **kwargs)
@@ -147,7 +152,7 @@ class DFS_client():
     @auth
     def add_file(self, *args, **kwargs):
         # print('add file')
-        return requests.post(self.files_address, **kwargs)
+        return requests.post(self.file_address, **kwargs)
 
     @cache.update_on_edit
     @auth

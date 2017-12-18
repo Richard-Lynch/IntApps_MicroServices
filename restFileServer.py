@@ -1,21 +1,26 @@
 #!/usr/local/bin/python3
+# general
 import sys
+# flask
 from flask import Flask
-from flask_restful import Api, Resource
-from flask_restful import reqparse, marshal
+from flask_restful import Api, Resource, reqparse, marshal
+# classes
+from fileserver import fileServer
+# my utils
 import my_errors
 my_errors.make_classes(my_errors.errors)
 import my_fields
-from fileserver import fileServer
 
 # ----- Init -----
 app = Flask(__name__)
 api = Api(app, errors=my_errors.errors)
 
-# ----- Files List -----
-
 
 class FilesListApi(Resource):
+    """
+    Provides API to list files on file server (ls)
+    """
+
     def __init__(self):
         global fileS
         self.fileS = fileS
@@ -25,27 +30,26 @@ class FilesListApi(Resource):
         super(FilesListApi, self).__init__()
 
     def get(self):
-        print("getting all files")
+        """Returns a list of all files on server"""
+        # print("getting all files")
         args = self.reqparse.parse_args()
         return {'message': self.fileS.get_all_files(**args)}
 
-    def post(self):
-        print('in post file')
-        args = self.reqparse.parse_args()
-        return {'message': self.fileS.add_file(**args)}
-
     def delete(self):
+        """TESTING ONLY! Delete the fileserver."""
         # called to delete the fileserver, testing only
-        print("unregistering all")
+        # print("unregistering all")
         self.fileS.del_all_files()
 
 
 api.add_resource(FilesListApi, '/files', endpoint='files')
 
-# ----- Individual File -----
-
 
 class FileApi(Resource):
+    """
+    Provides API to interact with individual files on the file server
+    """
+
     def __init__(self):
         global fileS
         self.fileS = fileS
@@ -55,18 +59,26 @@ class FileApi(Resource):
         super(FileApi, self).__init__()
 
     def get(self):
-        print("getting file")
+        """Retrieve all information on a specific file, including contents"""
+        # print("getting file")
         args = self.reqparse.parse_args()
         return {'message': self.fileS.get_file(**args)}
 
+    def post(self):
+        """Add a new file to the file server"""
+        # print('in post file')
+        args = self.reqparse.parse_args()
+        return {'message': self.fileS.add_file(**args)}
+
     def put(self):
-        print("editing file")
+        """Edit/update a file already on the file server"""
+        # print("editing file")
         args = self.reqparse.parse_args()
         return {'message': self.fileS.update_file(**args)}
-        # return {"file": marshal(f, my_fields.file_summary_fields)}
 
     def delete(self):
-        print("deleting file")
+        """Delete an individual file from the file server"""
+        # print("deleting file")
         args = self.reqparse.parse_args()
         return {'message': self.fileS.del_file(**args)}
 
@@ -75,6 +87,10 @@ api.add_resource(FileApi, '/file', endpoint='file')
 
 
 class CallbackApi(Resource):
+    """
+    Provides callback functionality to check if the server is up
+    """
+
     def __init__(self):
         super(CallbackApi, self).__init__()
 
